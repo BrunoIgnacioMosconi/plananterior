@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <link rel="manifest" href="manifest.json?v=1.0.1">
+  <meta name="theme-color" content="#4caf50">
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Plan Nutricional</title>
+  <!-- Favicon links -->
+  <link rel="icon" href="icons/icon-192.png" type="image/png">
+  <link rel="apple-touch-icon" href="icons/icon-180.png">
+  <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <header>
+    <h1 class="app-title">Plan Nutricional</h1>
+    <nav>
+      <button class="tab-btn" id="tab-principal">🍽️ Principal</button>
+      <button class="tab-btn" id="tab-historial">📊 Historial</button>
+      <button class="tab-btn" id="tab-opciones">⚙️ Configuración</button>
+      <button class="tab-btn" id="tab-ayuda">❓ Ayuda</button>
+    </nav>
+  </header>
+
+  <div class="container">
+    <section id="tab-content-opciones" class="tab-content" style="display:none">
+      <h2>Configuración de Alimentos</h2>
+      <div id="opciones-form"></div>
+    </section>
+    <section id="tab-content-principal" class="tab-content">
+      <div class="agua-container">
+        <strong>💧 Agua del día:</strong>
+        <div class="agua-contador">
+          <button id="add-water" class="btn-outline">+1 Vaso</button>
+          <span id="water-count">0</span>
+          <button id="reset-water" class="btn-secondary">Reiniciar</button>
+        </div>
+      </div>
+
+      <div id="suplementos-dia"></div>
+
+      <div class="tipo-dia-selector">
+        <label for="tipo-dia-select">📅 Tipo de día:</label>
+        <select id="tipo-dia-select">
+          <option value="entrenamiento">Día de entrenamiento</option>
+          <option value="no_entrenamiento">Día sin entrenamiento</option>
+        </select>
+      </div>
+
+      <h2>Comidas del Día</h2>
+      <ul id="comidas-lista" class="comidas-lista"></ul>
+    </section>
+    <section id="tab-content-historial" class="tab-content" style="display:none">
+      <h2>Historial de Comidas</h2>
+      <ul id="historial-lista" class="historial-lista"></ul>
+    </section>
+
+    <section id="tab-content-ayuda" class="tab-content" style="display:none">
+      <h2>Ayuda y Opciones</h2>
+
+      <div style="background:#e3f2fd; padding:20px; border-radius:8px; margin-bottom: 20px; box-shadow: var(--box-shadow);">
+        <h3 style="margin-top:0">📱 Instalación como App</h3>
+        <p style="margin-bottom:15px">Para instalar esta aplicación en tu dispositivo:</p>
+
+        <div style="background: white; padding: 15px; border-radius: 8px; margin-bottom: 10px;">
+          <h4>En iOS:</h4>
+          <ol style="padding-left: 20px;">
+            <li>Abre esta página en Safari</li>
+            <li>Toca el botón de "Compartir" (cuadrado con flecha)</li>
+            <li>Selecciona "Agregar a pantalla de inicio"</li>
+          </ol>
+        </div>
+
+        <div style="background: white; padding: 15px; border-radius: 8px;">
+          <h4>En Android:</h4>
+          <ol style="padding-left: 20px;">
+            <li>Abre esta página en Chrome</li>
+            <li>Toca el menú ⋮ (tres puntos verticales)</li>
+            <li>Selecciona "Instalar aplicación" o "Añadir a pantalla de inicio"</li>
+          </ol>
+        </div>
+      </div>
+
+      <div style="background:#fff3cd; padding:20px; border-radius:8px; margin-bottom: 20px; box-shadow: var(--box-shadow);">
+        <h3 style="margin-top:0">🔄 Gestión de datos</h3>
+        <p style="margin-bottom: 15px;">Si deseas reiniciar completamente la aplicación y eliminar todos los datos guardados:</p>
+        <button id="reiniciar-app" class="btn-delete">🔄 Reiniciar aplicación</button>
+        <p style="font-size:0.9em; color:#856404; margin-top:10px;">⚠️ Advertencia: Esta acción no se puede deshacer y eliminará todo tu historial y configuraciones.</p>
+      </div>
+
+      <div style="background:#d4edda; padding:20px; border-radius:8px; box-shadow: var(--box-shadow);">
+      <div class="export-import-container" style="margin-bottom: 20px; display: flex; gap: 10px; flex-wrap: wrap;">
+        <button id="export-csv">📤 Exportar datos</button>
+        <div style="position: relative; overflow: hidden; display: inline-block;">
+          <button class="btn-secondary">📥 Importar CSV</button>
+          <input type="file" id="import-csv" accept=".csv" style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; opacity: 0; cursor: pointer;" />
+        </div>
+      </div>
+        <h3 style="margin-top:0">💡 Consejos de uso</h3>
+        <ul style="padding-left: 20px;">
+          <li>Utiliza <strong>Exportar datos</strong> regularmente para crear una copia de seguridad.</li>
+          <li>Cambia entre tipos de día según corresponda a tu rutina de ejercicios.</li>
+          <li>Personaliza los alimentos en la sección de Configuración.</li>
+          <li>Consulta el historial para analizar tus patrones alimenticios.</li>
+        </ul>
+      </div>
+    </section>
+  </div>
+
+  <footer>
+    Plan Nutricional Personalizado – 2025
+  </footer>
+
+  <script src="app.js"></script>
+</body>
+</html>

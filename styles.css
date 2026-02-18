@@ -1,0 +1,565 @@
+/* Estilos generales para la aplicación de plan alimenticio */
+:root {
+  --primary-color: #4CAF50;
+  --primary-dark: #388E3C;
+  --primary-light: #C8E6C9;
+  --accent-color: #FF5722;
+  --text-primary: #212121;
+  --text-secondary: #757575;
+  --divider-color: #BDBDBD;
+  --background-light: #f5f5f5;
+  --box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+}
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  font-family: 'Roboto', 'Segoe UI', Tahoma, sans-serif;
+  color: var(--text-primary);
+  line-height: 1.6;
+  background-color: var(--background-light);
+  padding: 0;
+  margin: 0;
+  max-width: 100vw;
+  overflow-x: hidden;
+}
+
+.container {
+  width: 100%;
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 15px;
+}
+
+/* Header y navegación */
+header {
+  background-color: var(--primary-color);
+  color: white;
+  padding: 1rem;
+  box-shadow: var(--box-shadow);
+  position: sticky;
+  top: 0;
+  z-index: 100;
+}
+
+.app-title {
+  margin: 0;
+  font-size: 1.5rem;
+  text-align: center;
+}
+
+nav {
+  display: flex;
+  justify-content: space-around;
+  margin-top: 1rem;
+  flex-wrap: wrap;
+}
+
+.tab-btn {
+  padding: 0.75rem 1.5rem;
+  background-color: transparent;
+  border: none;
+  color: white;
+  cursor: pointer;
+  font-weight: 500;
+  position: relative;
+  transition: all 0.3s;
+  font-size: 1rem;
+  border-radius: 4px;
+}
+
+.tab-btn:hover {
+  background-color: rgba(255,255,255,0.1);
+}
+
+.tab-btn.active {
+  background-color: rgba(255,255,255,0.2);
+}
+
+.tab-btn.active::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 15%;
+  width: 70%;
+  height: 3px;
+  background-color: white;
+  border-radius: 3px 3px 0 0;
+}
+
+/* Contenido de tabs */
+.tab-content {
+  background-color: white;
+  border-radius: 8px;
+  margin: 1rem 0;
+  padding: 1.5rem;
+  box-shadow: var(--box-shadow);
+  animation: fadeIn 0.3s ease-in-out;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+/* Tarjetas de comidas */
+.comidas-lista {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.comidas-lista li {
+  background-color: white;
+  padding: 15px;
+  margin-bottom: 15px;
+  border-radius: 8px;
+  box-shadow: var(--box-shadow);
+  border-left: 5px solid var(--primary-color);
+}
+
+.comida-titulo {
+  font-weight: bold;
+  font-size: 1.2rem;
+  margin-bottom: 0.5rem;
+  color: var(--primary-dark);
+}
+
+.grupo-dropdown {
+  margin: 8px 0;
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.grupo-dropdown label {
+  font-weight: 500;
+  min-width: 120px;
+  margin-right: 10px;
+}
+
+.grupo-dropdown select {
+  padding: 8px 12px;
+  border-radius: 4px;
+  border: 1px solid var(--divider-color);
+  background-color: white;
+  flex-grow: 1;
+  max-width: 100%;
+  font-size: 16px;
+}
+
+/* Dropdown más pequeño para selección de grupos - ACTUALIZADO */
+#select-add-grupo-Desayuno-entrenamiento,
+#select-add-grupo-Almuerzo-entrenamiento,
+#select-add-grupo-Merienda-entrenamiento,
+#select-add-grupo-Cena-entrenamiento,
+#select-add-grupo-Desayuno-no-entrenamiento,
+#select-add-grupo-Almuerzo-no-entrenamiento,
+#select-add-grupo-Merienda-no-entrenamiento,
+#select-add-grupo-Cena-no-entrenamiento {
+  padding: 4px 6px !important;
+  font-size: 0.8rem !important;
+  height: 28px !important;
+  width: auto !important;
+  min-width: 120px !important;
+}
+
+/* Botones */
+button {
+  padding: 8px 16px;
+  border: none;
+  border-radius: 4px;
+  background-color: var(--primary-color);
+  color: white;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background-color 0.2s;
+  margin-right: 8px;
+  font-size: 14px;
+}
+
+button:hover {
+  background-color: var(--primary-dark);
+}
+
+button:disabled {
+  background-color: var(--divider-color);
+  cursor: not-allowed;
+}
+
+button.btn-delete {
+  background-color: #f44336;
+}
+
+button.btn-delete:hover {
+  background-color: #d32f2f;
+}
+
+button.btn-secondary {
+  background-color: #9E9E9E;
+}
+
+button.btn-secondary:hover {
+  background-color: #757575;
+}
+
+button.btn-outline {
+  background-color: transparent;
+  color: var(--primary-color);
+  border: 1px solid var(--primary-color);
+}
+
+button.btn-outline:hover {
+  background-color: var(--primary-light);
+}
+
+/* Contador de agua */
+.agua-container {
+  display: flex;
+  align-items: center;
+  background-color: #E1F5FE;
+  padding: 15px;
+  border-radius: 8px;
+  margin-bottom: 1rem;
+  box-shadow: var(--box-shadow);
+}
+
+.agua-container strong {
+  font-size: 1.2rem;
+  margin-right: 10px;
+  color: #0288D1;
+}
+
+.agua-contador {
+  display: flex;
+  align-items: center;
+  margin-left: auto;
+}
+
+.agua-contador span {
+  font-size: 1.5rem;
+  margin: 0 10px;
+  color: #0288D1;
+  font-weight: bold;
+}
+
+/* Suplementos */
+.suplemento-container {
+  background-color: #F3E5F5;
+  padding: 15px;
+  border-radius: 8px;
+  margin-bottom: 1rem;
+  box-shadow: var(--box-shadow);
+}
+
+.suplemento-container strong {
+  display: block;
+  margin-bottom: 10px;
+  color: #7B1FA2;
+  font-size: 1.1rem;
+}
+
+.suplemento-container label {
+  display: inline-block;
+  margin-right: 15px;
+  margin-bottom: 8px;
+  user-select: none;
+}
+
+.suplemento-container input[type="checkbox"] {
+  margin-right: 5px;
+  transform: scale(1.2);
+}
+
+/* Selector de tipo de día */
+.tipo-dia-selector {
+  margin-bottom: 1rem;
+  display: flex;
+  align-items: center;
+}
+
+.tipo-dia-selector label {
+  font-weight: bold;
+  margin-right: 10px;
+}
+
+.tipo-dia-selector select {
+  padding: 8px 12px;
+  border-radius: 4px;
+  border: 1px solid var(--divider-color);
+  font-size: 16px;
+}
+
+/* Historial */
+.historial-lista {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.historial-fecha {
+  background-color: var(--primary-light);
+  padding: 12px 15px;
+  margin-bottom: 8px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-weight: 500;
+  color: var(--primary-dark);
+  box-shadow: var(--box-shadow);
+}
+
+.historial-fecha:hover {
+  background-color: var(--primary-color);
+  color: white;
+}
+
+.historial-fecha + ul {
+  margin-left: 20px;
+  margin-bottom: 20px;
+  background-color: white;
+  border-radius: 0 0 8px 8px;
+  box-shadow: var(--box-shadow);
+  overflow: hidden;
+}
+
+.historial-fecha + ul li {
+  padding: 12px 15px;
+  border-bottom: 1px solid var(--divider-color);
+}
+
+.historial-fecha + ul li:last-child {
+  border-bottom: none;
+}
+
+.historial-item-nombre {
+  font-weight: 500;
+  color: var(--primary-dark);
+}
+
+.historial-item-seleccion {
+  display: block;
+  color: var(--text-secondary);
+  margin-top: 5px;
+  font-size: 0.95rem;
+}
+
+/* Configuración de opciones */
+.opciones-form {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  gap: 20px;
+}
+
+.grupo-opciones {
+  background-color: white;
+  border-radius: 8px;
+  padding: 15px;
+  box-shadow: var(--box-shadow);
+  margin-bottom: 20px;
+}
+
+.grupo-opciones strong {
+  display: block;
+  margin-bottom: 10px;
+  color: var(--primary-dark);
+  font-size: 1.1rem;
+  border-bottom: 2px solid var(--primary-light);
+  padding-bottom: 8px;
+}
+
+.grupo-opciones ul {
+  list-style: none;
+  margin: 0 0 15px 0;
+  padding: 0;
+}
+
+.grupo-opciones li {
+  padding: 8px 0;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-bottom: 1px solid var(--divider-color);
+}
+
+.grupo-opciones input[type="text"] {
+  padding: 8px 12px;
+  border-radius: 4px;
+  border: 1px solid var(--divider-color);
+  width: calc(100% - 100px);
+  font-size: 16px;
+}
+
+/* Config sección de configuración de comidas */
+.config-grupos-section {
+  background-color: white;
+  padding: 20px;
+  border-radius: 8px;
+  box-shadow: var(--box-shadow);
+  margin-bottom: 30px;
+}
+
+.dropdown-config-tabs {
+  display: flex;
+  margin-bottom: 15px;
+}
+
+.config-tab {
+  flex: 1;
+  padding: 10px;
+  text-align: center;
+  background-color: var(--background-light);
+  border: none;
+  cursor: pointer;
+  transition: background-color 0.3s;
+}
+
+.config-tab:first-child {
+  border-radius: 4px 0 0 4px;
+}
+
+.config-tab:last-child {
+  border-radius: 0 4px 4px 0;
+}
+
+.config-tab.active {
+  background-color: var(--primary-color);
+  color: white;
+}
+
+.comida-grupos {
+  border: 1px solid var(--divider-color);
+  border-radius: 8px;
+  padding: 15px;
+  margin-bottom: 15px;
+}
+
+/* Mensajes de notificación */
+.mensaje-container {
+  position: fixed;
+  top: 20px;
+  right: 20px;
+  z-index: 1000;
+  max-width: 300px;
+}
+
+.mensaje {
+  padding: 15px;
+  margin-bottom: 10px;
+  border-radius: 5px;
+  box-shadow: 0 3px 10px rgba(0,0,0,0.2);
+  animation: slideIn 0.3s ease-out;
+}
+
+@keyframes slideIn {
+  from { transform: translateX(100%); opacity: 0; }
+  to { transform: translateX(0); opacity: 1; }
+}
+
+.mensaje.success {
+  background-color: #4CAF50;
+  color: white;
+}
+
+.mensaje.error {
+  background-color: #F44336;
+  color: white;
+}
+
+.mensaje.info {
+  background-color: #2196F3;
+  color: white;
+}
+
+/* Footer */
+footer {
+  margin-top: 2rem;
+  text-align: center;
+  padding: 1rem;
+  color: var(--text-secondary);
+  font-size: 0.9rem;
+}
+
+/* Iconos para los grupos */
+.grupo-icono {
+  margin-right: 5px;
+  font-size: 1.2em;
+}
+
+/* Media Queries para responsive */
+@media (max-width: 768px) {
+  .container {
+    padding: 10px;
+  }
+
+  .tab-btn {
+    padding: 0.6rem 0.8rem;
+    font-size: 0.9rem;
+  }
+
+  .comidas-lista li {
+    padding: 12px;
+  }
+
+  .grupo-dropdown {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .grupo-dropdown label {
+    margin-bottom: 5px;
+  }
+
+  .grupo-dropdown select {
+    width: 100%;
+  }
+
+  .opciones-form {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 480px) {
+  nav {
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    padding-bottom: 5px;
+  }
+
+  .tab-btn {
+    flex: 0 0 auto;
+    white-space: nowrap;
+  }
+
+  .agua-container,
+  .suplemento-container {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .agua-contador {
+    margin-left: 0;
+    margin-top: 10px;
+  }
+
+  /* Eliminar margen derecho del botón agregar en mobile */
+  .btn-add {
+    margin-right: 0;
+  }
+}
+
+/* Ajustes específicos para elementos en configuración de grupos */
+#dropdown-config-contenido button.btn-add,
+#dropdown-config-contenido button.btn-outline {
+  margin-right: 0;
+}
+
+/* Eliminar margen derecho de los botones de comidas */
+button.btn-completar,
+.comidas-lista button.btn-secondary {
+  margin-right: 0;
+}

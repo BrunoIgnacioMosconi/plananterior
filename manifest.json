@@ -1,0 +1,21 @@
+{
+  "name": "Plan Nutricional",
+  "short_name": "MiPlan",
+  "start_url": "./index.html",
+  "display": "standalone",
+  "background_color": "#f0f4f8",
+  "theme_color": "#4caf50",
+  "description": "Seguimiento personal de comidas, agua y suplementos",
+  "icons": [
+    {
+      "src": "icons/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "icons/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ]
+}
