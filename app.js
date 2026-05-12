@@ -54,37 +54,48 @@ function mostrarMensajeRestaurar(mensaje, grupoKey, valor, idx) {
 function exportarHistorialCSV() {
    const historial = JSON.parse(localStorage.getItem('historialComidas') || '[]');
   const waterCounts = JSON.parse(localStorage.getItem('waterCounts') || '{}');
+  const jugoCounts = JSON.parse(localStorage.getItem('jugoCounts') || '{}');
   const suplementosPorDia = JSON.parse(localStorage.getItem('suplementosPorDia') || '{}');
+  const eventualidades = JSON.parse(localStorage.getItem('eventualidadesSemanales') || '[]');
   const dias = {};
   historial.forEach(item => {
     const fechaSolo = item.fecha.split(',')[0].split(' ')[0].trim();
     if (!dias[fechaSolo]) dias[fechaSolo] = [];
     dias[fechaSolo].push(item);
   });
-  // Incluir días que sólo tienen agua o suplementos (sin comidas registradas)
-  // para que el round-trip de export/import no los pierda.
-  Object.keys(waterCounts).forEach(fecha => {
-    if (!dias[fecha]) dias[fecha] = [{ nombre: '', seleccion: '' }];
+  // Incluir días con solo agua, jugo o suplementos para que el round-trip no los pierda.
+  [waterCounts, jugoCounts, suplementosPorDia].forEach(obj => {
+    Object.keys(obj).forEach(fecha => {
+      if (!dias[fecha]) dias[fecha] = [{ nombre: '', seleccion: '' }];
+    });
   });
-  Object.keys(suplementosPorDia).forEach(fecha => {
-    if (!dias[fecha]) dias[fecha] = [{ nombre: '', seleccion: '' }];
-  });
-  let csv = 'Fecha,Agua,Suplementos,Comida,Selección\n';
+  let csv = 'Fecha,Agua,Jugo,Suplementos,Comida,Selección\n';
   Object.keys(dias).sort((a, b) => {
     const [da, ma, ya] = a.split('/');
     const [db, mb, yb] = b.split('/');
     return new Date(`${yb}-${mb}-${db}`) - new Date(`${ya}-${ma}-${da}`);
   }).forEach(fecha => {
     const agua = waterCounts[fecha] || 0;
+    const jugo = jugoCounts[fecha] || 0;
     const suplementos = (suplementosPorDia[fecha] || []).join(' | ');
     dias[fecha].forEach(item => {
       const fechaCSV = `"${fecha.replace(/"/g, '""')}"`;
       const aguaCSV = `"${agua}"`;
+      const jugoCSV = `"${jugo}"`;
       const suplementosCSV = `"${suplementos.replace(/"/g, '""')}"`;
       const nombre = `"${(item.nombre || '').replace(/"/g, '""')}"`;
       const seleccion = `"${(item.seleccion || '').replace(/"/g, '""')}"`;
-      csv += `${fechaCSV},${aguaCSV},${suplementosCSV},${nombre},${seleccion}\n`;
+      csv += `${fechaCSV},${aguaCSV},${jugoCSV},${suplementosCSV},${nombre},${seleccion}\n`;
     });
+  });
+
+  // Agregar eventualidades en su propia sección
+  csv += '\nEventualidades\n';
+  eventualidades.forEach(e => {
+    const fechaCSV = `"${(e.fecha || '').replace(/"/g, '""')}"`;
+    const tipoCSV = `"${(e.tipo || '').replace(/"/g, '""')}"`;
+    const tsCSV = `"${e.ts || ''}"`;
+    csv += `${fechaCSV},${tipoCSV},${tsCSV}\n`;
   });
 
   // Agregar las opciones de dropdowns al final del CSV
@@ -132,9 +143,19 @@ function importarHistorialCSV(file) {
       alert('El archivo CSV está vacío o no tiene datos.');
       return;
     }
-    // Separar historial y opciones
+    // Separar historial y otras secciones
+    let eventualidadesStart = lines.findIndex(l => l.toLowerCase().trim() === 'eventualidades');
     let opcionesStart = lines.findIndex(l => l.toLowerCase().includes('opciones de dropdowns'));
-    let historialLines = opcionesStart > -1 ? lines.slice(0, opcionesStart) : lines;
+    // El historial termina antes de cualquier sección posterior
+    const firstSectionStart = [eventualidadesStart, opcionesStart].filter(x => x > -1).sort((a, b) => a - b)[0] ?? lines.length;
+    let historialLines = lines.slice(0, firstSectionStart);
+
+    let eventualidadesLines = [];
+    if (eventualidadesStart > -1) {
+      const endIdx = lines.findIndex((l, i) => i > eventualidadesStart && (l.toLowerCase().includes('opciones de dropdowns') || l.toLowerCase().includes('configuración de comidas')));
+      eventualidadesLines = lines.slice(eventualidadesStart + 1, endIdx > -1 ? endIdx : lines.length).filter(l => l.trim() && l.includes(','));
+    }
+
     let opcionesLines = opcionesStart > -1 ? lines.slice(opcionesStart + 1) : [];
 
     // Buscar secciones de configuración de comidas
@@ -166,6 +187,7 @@ function importarHistorialCSV(file) {
     const headers = historialLines[0].split(',');
     const idxFecha = headers.findIndex(h => h.toLowerCase().includes('fecha'));
     const idxAgua = headers.findIndex(h => h.toLowerCase().includes('agua'));
+    const idxJugo = headers.findIndex(h => h.toLowerCase().includes('jugo'));
     const idxSup = headers.findIndex(h => h.toLowerCase().includes('suplementos'));
     const idxComida = headers.findIndex(h => h.toLowerCase().includes('comida'));
     const idxSel = headers.findIndex(h => h.toLowerCase().includes('selección'));
@@ -174,17 +196,20 @@ function importarHistorialCSV(file) {
       return;
     }
     const waterCounts = {};
+    const jugoCounts = {};
     const suplementosPorDia = {};
     const historial = [];
     for (let i = 1; i < historialLines.length; i++) {
       const cols = historialLines[i].split(/,(?=(?:[^"]*"[^"]*")*[^"]*$)/);
       const fecha = (cols[idxFecha] || '').replace(/(^"|"$)/g, '').trim();
       const agua = (cols[idxAgua] || '').replace(/(^"|"$)/g, '').trim();
+      const jugo = idxJugo >= 0 ? (cols[idxJugo] || '').replace(/(^"|"$)/g, '').trim() : '';
       const sup = (cols[idxSup] || '').replace(/(^"|"$)/g, '').trim();
       const nombre = (cols[idxComida] || '').replace(/(^"|"$)/g, '').trim();
       const seleccion = (cols[idxSel] || '').replace(/(^"|"$)/g, '').trim();
       if (fecha) {
         if (agua) waterCounts[fecha] = parseInt(agua, 10) || 0;
+        if (jugo) jugoCounts[fecha] = parseInt(jugo, 10) || 0;
         if (sup) suplementosPorDia[fecha] = sup.split(' | ').map(s => s.trim());
       }
       if (fecha && nombre) {
@@ -192,8 +217,21 @@ function importarHistorialCSV(file) {
       }
     }
     localStorage.setItem('waterCounts', JSON.stringify(waterCounts));
+    localStorage.setItem('jugoCounts', JSON.stringify(jugoCounts));
     localStorage.setItem('suplementosPorDia', JSON.stringify(suplementosPorDia));
     localStorage.setItem('historialComidas', JSON.stringify(historial));
+
+    // Procesar eventualidades
+    if (eventualidadesLines.length) {
+      const eventualidades = eventualidadesLines.map(line => {
+        const parts = line.split(/,(?=(?:[^"]*"[^"]*")*[^"]*$)/);
+        const fecha = (parts[0] || '').replace(/(^"|"$)/g, '').trim();
+        const tipo = (parts[1] || '').replace(/(^"|"$)/g, '').trim();
+        const ts = parseInt((parts[2] || '').replace(/(^"|"$)/g, '').trim(), 10) || Date.now();
+        return fecha && tipo ? { fecha, tipo, ts } : null;
+      }).filter(Boolean);
+      localStorage.setItem('eventualidadesSemanales', JSON.stringify(eventualidades));
+    }
 
     // Procesar opciones de dropdowns
     if (opcionesLines.length) {
@@ -281,6 +319,15 @@ function importarHistorialCSV(file) {
     // Recargar todos los datos necesarios
     cargarComidas();
     cargarHistorial();
+    cargarEventualidades();
+    cargarSuplementosDia();
+
+    // Refrescar los contadores de agua y jugo del día actual
+    const todayKey = getTodayKey();
+    const waterSpan = document.getElementById('water-count');
+    if (waterSpan) waterSpan.textContent = getWaterCount(todayKey);
+    const jugoSpan = document.getElementById('jugo-count');
+    if (jugoSpan) jugoSpan.textContent = getJugoCount(todayKey);
 
     // Forzar la actualización de la configuración de dropdowns por comida
     // independientemente de la pestaña actual
@@ -317,7 +364,7 @@ let tabActual = 'principal';
 // 🧠 Aquí están todas las opciones para los dropdowns agrupadas por tipo
 const opciones = {
   proteinas_desayuno_merienda: [
-    "Vaso de leche (250cc)",
+    "Vaso de leche (200cc)",
     "Vaso de yogur (200cc)",
     "Porción de queso (70gr)",
     "Fetas de queso (4u)",
@@ -326,7 +373,7 @@ const opciones = {
     "Huevo entero (3u)"
   ],
   proteinas_desayuno_merienda_no_entrenamiento: [
-    "Vaso de leche (250cc)",
+    "Vaso de leche (200cc)",
     "Vaso de yogur (200cc)",
     "Porción de queso (70gr)",
     "Fetas de queso (4u)",
@@ -334,9 +381,9 @@ const opciones = {
     "Huevo entero (3u)"
   ],
   hidratos_desayuno_merienda: [
-    "Pan lactal integral (4u)",
-    "Pan de mesa (8u)",
-    "Tostada de arroz (6u)",
+    "Pan lactal integral (3u)",
+    "Pan de mesa (6u)",
+    "Tostada de arroz (3u)",
     "Granola (140gr)",
     "Avena (140gr)",
     "Bay Biscuit (2u)"
@@ -349,14 +396,6 @@ const opciones = {
     "SI",
     "NO"
   ],
-  colaciones: [
-    "Fruta",
-    "Gelatina",
-    "Torta de avena",
-    "Yogur (120gr)",
-    "Barras de cereal",
-    "Muttant Mass",
-  ],
   grasas: [
     "4 nueces",
     "Pasta de maní",
@@ -365,35 +404,34 @@ const opciones = {
   // Opciones separadas para almuerzo y cena
   proteinas_almuerzo_entrenamiento: [
     "Huevo entero (3u)",
-    "Porción de queso PortSalut (80gr)",
+    "Queso PortSalut (80gr)",
     "Ricota (80gr)",
-    "Lomo (200g)",
-    "Solomillo (200g)",
-    "Peceto (200g)",
-    "Bola de Lomo(200g)",
-    "Cuadril (200g)",
-    "Nalga(200g)",
-    "Pollo (200g)",
-    "Pavo (200g)"
+    "Carne (280g)",
+    "Pollo (280g)",
   ],
   hidratos_almuerzo_entrenamiento: [
-    "Legumbre (200gr)",
-    "Arroz (220gr cocido)",
-    "Quinoa (??)",
-    "Trigo (??)",
+    "Arroz cocido (330-360g)",
+    "Pasta cocida (330-360g)",
+    "Legumbres (340-360g)",
+    "Choclo (340-360g)",
+    "Soja (340-360g)",
+    "Quinoa (330-360g)",
+    "Trigo (330-360g)"
+  ],
+  vegetales_almuerzo_entrenamiento: [
+    "SI",
+    "NO"
+  ],
+  postres_almuerzo_entrenamiento: [
+    "Flan",
+    "Sin postre"
   ],
   proteinas_almuerzo_no_entrenamiento: [
     "Huevo entero (3u)",
-    "Porción de queso PortSalut (80gr)",
+    "Queso PortSalut (80gr)",
     "Ricota (80gr)",
-    "Lomo (200g)",
-    "Solomillo (200g)",
-    "Peceto (200g)",
-    "Bola de Lomo(200g)",
-    "Cuadril (200g)",
-    "Nalga (200g)",
+    "Carne (200g)",
     "Pollo (200g)",
-    "Pavo (200g)"
   ],
   hidratos_almuerzo_no_entrenamiento: [
     "Papa (2u med.)",
@@ -403,30 +441,48 @@ const opciones = {
   ],
   vegetales_almuerzo_no_entrenamiento: [
     "SI",
-    "NO",
+    "NO"
   ],
   proteinas_cena: [
     "Huevo entero (3u)",
     "Ricota (80gr)",
     "Queso PortSalut (80gr)",
-    "Solomillo (200g)",
-    "Pollo (200g)",
-    "Pavo (200g)",
-    "Abadejo (200g)",
-    "atún (200g)",
-    "merluza (200g)",
-    "salmón (200g)",
-    "trucha (200g)",
+    "Carne (220g)",
+    "Pollo (220g)",
+    "Pescado (220g)"
   ],
   hidratos_cena: [
+    "Papa (360-380g)",
+    "Camote (360-380g)",
+    "Legumbres (340-360g)",
+    "Choclo (340-360g)"
+  ],
+  vegetales_cena: [
+    "SI",
+    "NO"
+  ],
+  postres_cena: [
+    "Flan",
+    "Sin postre"
+  ],
+  // Cena en días sin entrenamiento: cantidades originales, sin postre.
+  proteinas_cena_no_entrenamiento: [
+    "Huevo entero (3u)",
+    "Ricota (80gr)",
+    "Queso PortSalut (80gr)",
+    "Carne (200g)",
+    "Pollo (200g)",
+    "Pescado (200g)"
+  ],
+  hidratos_cena_no_entrenamiento: [
     "Papa (2u med.)",
     "Camote (2u med.)",
     "Legumbres (200gr)",
     "Choclo (??)"
   ],
-  vegetales_cena: [
+  vegetales_cena_no_entrenamiento: [
     "SI",
-    "NO",
+    "NO"
   ],
   suplementos: [
     "Creatina",
@@ -434,6 +490,14 @@ const opciones = {
     "Muttant Mass (Scoop 1)",
     "Muttant Mass (Scoop 2)"
   ],
+  eventualidades: [
+    "Hamburguesa",
+    "Helado",
+    "Chocolate",
+    "Pizza",
+    "Asado",
+    "Otro"
+  ]
 };
 
 // 💊 Lista de suplementos disponibles para elegir por día
@@ -449,40 +513,24 @@ const opciones = {
 // Podés duplicar un grupo (como "proteinas") si querés mostrar dos dropdowns de ese tipo
 const comidasEntrenamiento = [
   {
-    nombre: "Desayuno",  // nombre visible en pantalla
-    tipo: "desayuno_merienda",          // clave que determina qué grupo de opciones se usa ("desayuno_merienda")
-    grupos: [
-      "proteinas",       // primer dropdown de proteínas
-      "proteinas",       // segundo dropdown de proteínas (agregado nuevo)
-      "hidratos",
-      "frutas",
-      "grasas"
-    ]
+    nombre: "Desayuno",
+    tipo: "desayuno_merienda",
+    grupos: ["proteinas", "proteinas", "hidratos", "frutas", "grasas"]
   },
   {
     nombre: "Almuerzo",
     tipo: "almuerzo_entrenamiento",
-    grupos: ["proteinas", "hidratos"]
+    grupos: ["proteinas", "hidratos", "vegetales", "postres"]
   },
   {
     nombre: "Merienda",
     tipo: "desayuno_merienda",
-    grupos: [
-      "proteinas",       // primer dropdown de proteínas
-      "proteinas",       // segundo dropdown de proteínas (agregado nuevo)
-      "hidratos",
-      "frutas"
-    ]
+    grupos: ["proteinas", "proteinas", "hidratos", "frutas"]
   },
   {
     nombre: "Cena",
     tipo: "cena",
-    grupos: ["proteinas", "hidratos", "vegetales"]
-  },
-  {
-    nombre: "Colación",
-    tipo: null,
-    grupos: ["colaciones"]
+    grupos: ["proteinas", "hidratos", "vegetales", "postres"]
   }
 ];
 
@@ -505,20 +553,21 @@ const comidasNoEntrenamiento = [
   },
   {
     nombre: "Cena",
-    tipo: "cena",
+    tipo: "cena_no_entrenamiento",
     grupos: ["proteinas", "hidratos", "vegetales"]
-  },
-  {
-    nombre: "Colación",
-    tipo: null,
-    grupos: ["colaciones"]
   }
 ];
 
 // 🔄 Recuperar opciones actuales desde localStorage (si existen)
 function getOpciones() {
   const saved = JSON.parse(localStorage.getItem('opcionesDropdowns') || 'null');
-  return saved || JSON.parse(JSON.stringify(opciones));
+  if (!saved) return JSON.parse(JSON.stringify(opciones));
+  // Mergear claves nuevas de los defaults para usuarios que tenían config guardada
+  // antes de que se agregaran grupos (postres, eventualidades, etc.).
+  Object.keys(opciones).forEach(k => {
+    if (!(k in saved)) saved[k] = opciones[k].slice();
+  });
+  return saved;
 }
 
 // 💾 Guardar opciones personalizadas al localStorage
@@ -544,6 +593,8 @@ function crearSelector(grupo, idx, tipo, selected = null) {
     key = `${grupo}_almuerzo_no_entrenamiento`;
   } else if (tipo === "cena") {
     key = `${grupo}_cena`;
+  } else if (tipo === "cena_no_entrenamiento") {
+    key = `${grupo}_cena_no_entrenamiento`;
   } else if ((grupo === "proteinas" || grupo === "hidratos") && tipo === "desayuno_merienda") {
     key = `${grupo}_desayuno_merienda`;
   } else {
@@ -824,8 +875,9 @@ function cargarHistorial() {
     const li = document.createElement('li');
     li.className = 'historial-fecha';
 
-    // Obtener datos de agua y suplementos
+    // Obtener datos de agua, jugo y suplementos
     const wc = JSON.parse(localStorage.getItem('waterCounts') || '{}')[fecha] || 0;
+    const jc = JSON.parse(localStorage.getItem('jugoCounts') || '{}')[fecha] || 0;
     const sup = (JSON.parse(localStorage.getItem('suplementosPorDia') || '{}')[fecha] || []);
 
     // Crear cabecera del día con iconos
@@ -844,6 +896,14 @@ function cargarHistorial() {
     waterBadge.className = 'historial-badge historial-badge--agua';
     waterBadge.textContent = `💧 ${wc}`;
     badgesContainer.appendChild(waterBadge);
+
+    // Badge de jugo (si hay)
+    if (jc > 0) {
+      const jugoBadge = document.createElement('span');
+      jugoBadge.className = 'historial-badge historial-badge--jugo';
+      jugoBadge.textContent = `🧃 ${jc}`;
+      badgesContainer.appendChild(jugoBadge);
+    }
 
     // Badges de suplementos (si hay)
     if (sup.length > 0) {
@@ -948,6 +1008,161 @@ function setWaterCount(key, v) {
   const m = JSON.parse(localStorage.getItem('waterCounts') || '{}');
   m[key] = v;
   localStorage.setItem('waterCounts', JSON.stringify(m));
+}
+
+// — Jugo Ades por día —
+function getJugoCount(key) { return JSON.parse(localStorage.getItem('jugoCounts') || '{}')[key] || 0; }
+function setJugoCount(key, v) {
+  const m = JSON.parse(localStorage.getItem('jugoCounts') || '{}');
+  m[key] = v;
+  localStorage.setItem('jugoCounts', JSON.stringify(m));
+}
+
+// — Eventualidades semanales (lunes a domingo) —
+function getInicioSemana(d = new Date()) {
+  // Devuelve un Date al lunes 00:00 de la semana de d.
+  const dia = d.getDay(); // 0 = domingo, 1 = lunes, ..., 6 = sábado
+  const offset = dia === 0 ? -6 : 1 - dia;
+  const lunes = new Date(d);
+  lunes.setDate(d.getDate() + offset);
+  lunes.setHours(0, 0, 0, 0);
+  return lunes;
+}
+
+function getFinSemana(d = new Date()) {
+  const lunes = getInicioSemana(d);
+  const domingo = new Date(lunes);
+  domingo.setDate(lunes.getDate() + 7); // exclusivo
+  return domingo;
+}
+
+function parseFechaArg(fechaStr) {
+  // Parsea "DD/M/YYYY" o "DD/MM/YYYY" a Date.
+  const [d, m, y] = fechaStr.split('/').map(Number);
+  return new Date(y, m - 1, d);
+}
+
+function getEventualidadesSemana() {
+  const todas = JSON.parse(localStorage.getItem('eventualidadesSemanales') || '[]');
+  const inicio = getInicioSemana();
+  const fin = getFinSemana();
+  return todas.filter(e => {
+    const f = parseFechaArg(e.fecha);
+    return f >= inicio && f < fin;
+  });
+}
+
+function agregarEventualidad(tipo) {
+  const todas = JSON.parse(localStorage.getItem('eventualidadesSemanales') || '[]');
+  todas.push({ fecha: getTodayKey(), tipo, ts: Date.now() });
+  localStorage.setItem('eventualidadesSemanales', JSON.stringify(todas));
+}
+
+function quitarEventualidad(ts) {
+  const todas = JSON.parse(localStorage.getItem('eventualidadesSemanales') || '[]');
+  const i = todas.findIndex(e => e.ts === ts);
+  if (i >= 0) {
+    todas.splice(i, 1);
+    localStorage.setItem('eventualidadesSemanales', JSON.stringify(todas));
+  }
+}
+
+function cargarEventualidades() {
+  const cont = document.getElementById('eventualidades-semana');
+  if (!cont) return;
+  cont.innerHTML = '';
+
+  const eventos = getEventualidadesSemana();
+  const limite = 3;
+
+  const header = document.createElement('div');
+  header.className = 'eventualidades-header';
+
+  const titulo = document.createElement('span');
+  titulo.className = 'eventualidades-titulo';
+  titulo.textContent = '🎉 Eventualidades de la semana';
+
+  const contador = document.createElement('span');
+  contador.className = 'eventualidades-contador';
+  contador.textContent = `${eventos.length} / ${limite}`;
+
+  header.appendChild(titulo);
+  header.appendChild(contador);
+  cont.appendChild(header);
+
+  if (eventos.length >= limite) {
+    const aviso = document.createElement('p');
+    aviso.className = 'eventualidades-empty';
+    aviso.textContent = 'Ya alcanzaste el límite de la semana. ¡Buen trabajo!';
+    cont.appendChild(aviso);
+  } else {
+    const addRow = document.createElement('div');
+    addRow.className = 'eventualidades-add';
+
+    const select = document.createElement('select');
+    select.name = 'eventualidad-tipo';
+    select.setAttribute('aria-label', 'Tipo de eventualidad');
+    (getOpciones().eventualidades || []).forEach(opt => {
+      const o = document.createElement('option');
+      o.value = opt;
+      o.textContent = opt;
+      select.appendChild(o);
+    });
+
+    const btn = document.createElement('button');
+    btn.textContent = '+ Agregar';
+    btn.className = 'btn-outline';
+    btn.onclick = () => {
+      if (!select.value) return;
+      agregarEventualidad(select.value);
+      cargarEventualidades();
+    };
+
+    addRow.appendChild(select);
+    addRow.appendChild(btn);
+    cont.appendChild(addRow);
+  }
+
+  if (eventos.length === 0) {
+    const empty = document.createElement('p');
+    empty.className = 'eventualidades-empty';
+    empty.textContent = 'Sin eventualidades esta semana.';
+    cont.appendChild(empty);
+    return;
+  }
+
+  const ul = document.createElement('ul');
+  ul.className = 'eventualidades-lista';
+  // Más recientes primero
+  eventos.slice().sort((a, b) => b.ts - a.ts).forEach(e => {
+    const li = document.createElement('li');
+
+    const tipoSpan = document.createElement('span');
+    tipoSpan.textContent = e.tipo;
+
+    const fechaSpan = document.createElement('span');
+    fechaSpan.className = 'eventualidad-fecha';
+    fechaSpan.textContent = e.fecha;
+
+    const acciones = document.createElement('div');
+    acciones.className = 'eventualidad-acciones';
+    acciones.appendChild(fechaSpan);
+
+    const btnQuitar = document.createElement('button');
+    btnQuitar.className = 'eventualidad-quitar';
+    btnQuitar.textContent = '✖';
+    btnQuitar.setAttribute('aria-label', `Quitar ${e.tipo}`);
+    btnQuitar.onclick = () => {
+      quitarEventualidad(e.ts);
+      cargarEventualidades();
+    };
+    acciones.appendChild(btnQuitar);
+
+    li.appendChild(tipoSpan);
+    li.appendChild(acciones);
+    ul.appendChild(li);
+  });
+  cont.appendChild(ul);
 }
 
 
@@ -1352,22 +1567,39 @@ window.addEventListener('DOMContentLoaded', () => {
   document.getElementById('tipo-dia-select').onchange = cargarComidas;
   cargarHistorial();
   cargarSuplementosDia();
+  cargarEventualidades();
 
   // Agua
-  const key = getTodayKey();
-  let cnt = getWaterCount(key);
-  const span = document.getElementById('water-count');
-  span.textContent = cnt;
+  const waterSpan = document.getElementById('water-count');
+  waterSpan.textContent = getWaterCount(getTodayKey());
   document.getElementById('add-water').onclick = () => {
-    cnt++;
-    span.textContent = cnt;
-    setWaterCount(key, cnt);
+    const k = getTodayKey();
+    const v = getWaterCount(k) + 1;
+    setWaterCount(k, v);
+    waterSpan.textContent = v;
     cargarHistorial();
   };
   document.getElementById('reset-water').onclick = () => {
-    cnt = 0;
-    span.textContent = cnt;
-    setWaterCount(key, cnt);
+    const k = getTodayKey();
+    setWaterCount(k, 0);
+    waterSpan.textContent = 0;
+    cargarHistorial();
+  };
+
+  // Jugo Ades
+  const jugoSpan = document.getElementById('jugo-count');
+  jugoSpan.textContent = getJugoCount(getTodayKey());
+  document.getElementById('add-jugo').onclick = () => {
+    const k = getTodayKey();
+    const v = getJugoCount(k) + 1;
+    setJugoCount(k, v);
+    jugoSpan.textContent = v;
+    cargarHistorial();
+  };
+  document.getElementById('reset-jugo').onclick = () => {
+    const k = getTodayKey();
+    setJugoCount(k, 0);
+    jugoSpan.textContent = 0;
     cargarHistorial();
   };
 
