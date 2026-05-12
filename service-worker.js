@@ -1,8 +1,7 @@
-const CACHE_NAME = 'nutricion-v3';
+const CACHE_NAME = 'nutricion-v10';
 const urlsToCache = [
   './',
   './index.html',
-  './style.css',
   './styles.css',
   './app.js',
   './manifest.json',
@@ -13,7 +12,17 @@ const urlsToCache = [
 
 self.addEventListener('install', event => {
   event.waitUntil(
-    caches.open(CACHE_NAME).then(cache => cache.addAll(urlsToCache))
+    caches.open(CACHE_NAME)
+      .then(cache => cache.addAll(urlsToCache))
+      .then(() => self.skipWaiting())
+  );
+});
+
+self.addEventListener('activate', event => {
+  event.waitUntil(
+    caches.keys()
+      .then(keys => Promise.all(keys.filter(k => k !== CACHE_NAME).map(k => caches.delete(k))))
+      .then(() => self.clients.claim())
   );
 });
 
