@@ -245,15 +245,18 @@ nav {
 
 .comida-grupo {
   margin: 8px 0;
+}
+
+.comida-grupo > label {
   display: flex;
   align-items: center;
   flex-wrap: wrap;
+  gap: 10px;
 }
 
-.comida-grupo label {
+.comida-grupo-label {
   font-weight: 500;
   min-width: 120px;
-  margin-right: 10px;
 }
 
 .comida-grupo select {
@@ -649,6 +652,27 @@ button.btn-outline:hover {
   color: var(--jugo-fg);
 }
 
+.historial-badge--evento {
+  background-color: var(--evento-bg);
+  color: var(--evento-fg);
+}
+
+.historial-eventualidades-item {
+  background-color: var(--evento-bg);
+  display: flex !important;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.historial-eventualidades-label {
+  color: var(--evento-fg);
+  font-weight: 500;
+}
+
+.historial-eventualidades-valor {
+  color: var(--text-primary);
+}
+
 .historial-fecha + ul {
   margin-left: 20px;
   margin-bottom: 20px;
@@ -1024,12 +1048,12 @@ footer {
 
   .comidas-lista li { padding: 12px; }
 
-  .comida-grupo {
+  .comida-grupo > label {
     flex-direction: column;
     align-items: flex-start;
+    gap: 5px;
   }
 
-  .comida-grupo label { margin-bottom: 5px; }
   .comida-grupo select { width: 100%; }
 
   .opciones-form { grid-template-columns: 1fr; }

@@ -367,8 +367,8 @@ const opciones = {
     "Vaso de leche (200cc)",
     "Vaso de yogur (200cc)",
     "Porción de queso (70gr)",
-    "Fetas de queso (4u)",
-    "Fetas de jamon (4u)",
+    "Fetas de queso (3u)",
+    "Fetas de jamon (3u)",
     "Queso untable (2 cdas)",
     "Huevo entero (3u)"
   ],
@@ -376,7 +376,7 @@ const opciones = {
     "Vaso de leche (200cc)",
     "Vaso de yogur (200cc)",
     "Porción de queso (70gr)",
-    "Fetas de queso (4u)",
+    "Fetas de queso (3u)",
     "Queso untable (2 cdas)",
     "Huevo entero (3u)"
   ],
@@ -639,6 +639,8 @@ function cargarSuplementosDia() {
 
     const cb = document.createElement('input');
     cb.type = 'checkbox';
+    cb.name = 'suplemento';
+    cb.value = sup;
     cb.checked = tomados.includes(sup);
     cb.onchange = () => {
       const m = JSON.parse(localStorage.getItem('suplementosPorDia') || '{}');
@@ -734,13 +736,16 @@ function cargarComidas() {
       const icono = iconos[base] || '';
 
       const label = document.createElement('label');
-      label.innerHTML = `${icono} ${labelGrupo}`;
+      const labelText = document.createElement('span');
+      labelText.className = 'comida-grupo-label';
+      labelText.textContent = `${icono} ${labelGrupo}`;
+      label.appendChild(labelText);
 
       const selector = crearSelector(g, i, c.tipo);
       if (done) selector.disabled = true;
+      label.appendChild(selector);
 
       grupoDiv.appendChild(label);
-      grupoDiv.appendChild(selector);
       li.appendChild(grupoDiv);
     });
 
@@ -856,13 +861,24 @@ function cargarHistorial() {
   const ul = document.getElementById('historial-lista');
   ul.innerHTML = '';
   const h = JSON.parse(localStorage.getItem('historialComidas') || '[]');
+  const eventualidadesAll = JSON.parse(localStorage.getItem('eventualidadesSemanales') || '[]');
   const dias = {};
+  const eventualidadesPorDia = {};
 
-  // Agrupar por fecha
+  // Agrupar comidas por fecha
   h.forEach((item, idx) => {
     const d = item.fecha.split(',')[0].split(' ')[0].trim();
     if (!dias[d]) dias[d] = [];
     dias[d].push({ item, idx });
+  });
+
+  // Agrupar eventualidades por fecha y asegurar que aparezcan días con
+  // eventualidades aunque no haya comidas registradas.
+  eventualidadesAll.forEach(e => {
+    if (!e.fecha) return;
+    if (!eventualidadesPorDia[e.fecha]) eventualidadesPorDia[e.fecha] = [];
+    eventualidadesPorDia[e.fecha].push(e);
+    if (!dias[e.fecha]) dias[e.fecha] = [];
   });
 
   // Ordenar fechas de más reciente a más antigua
@@ -914,6 +930,16 @@ function cargarHistorial() {
       badgesContainer.appendChild(supBadge);
     }
 
+    // Badge de eventualidades (si hay)
+    const eventosDia = eventualidadesPorDia[fecha] || [];
+    if (eventosDia.length > 0) {
+      const eventoBadge = document.createElement('span');
+      eventoBadge.className = 'historial-badge historial-badge--evento';
+      eventoBadge.textContent = `🎉 ${eventosDia.length}`;
+      eventoBadge.title = eventosDia.map(e => e.tipo).join(', ');
+      badgesContainer.appendChild(eventoBadge);
+    }
+
     dateHeader.appendChild(dateText);
     dateHeader.appendChild(badgesContainer);
     li.appendChild(dateHeader);
@@ -922,6 +948,21 @@ function cargarHistorial() {
 
     // Lista de comidas del día
     const inner = document.createElement('ul');
+
+    // Eventualidades del día como primer item (si hay)
+    if (eventosDia.length > 0) {
+      const liEvento = document.createElement('li');
+      liEvento.className = 'historial-eventualidades-item';
+      const labelEv = document.createElement('span');
+      labelEv.className = 'historial-eventualidades-label';
+      labelEv.textContent = '🎉 Eventualidades:';
+      const valorEv = document.createElement('span');
+      valorEv.className = 'historial-eventualidades-valor';
+      valorEv.textContent = eventosDia.map(e => e.tipo).join(', ');
+      liEvento.appendChild(labelEv);
+      liEvento.appendChild(valorEv);
+      inner.appendChild(liEvento);
+    }
 
     dias[fecha].forEach(({ item, idx }) => {
       const li2 = document.createElement('li');
@@ -1383,6 +1424,7 @@ function mostrarMensajeRestaurarGrupo(mensaje, comidaNombre, tipoDia, grupo, idx
 
       const select = document.createElement('select');
       select.className = 'select-add-grupo';
+      select.name = 'add-grupo';
       select.setAttribute('aria-label', `Agregar grupo a ${comida.nombre}`);
 
       // Opciones disponibles para añadir con iconos
@@ -1518,6 +1560,7 @@ function mostrarMensajeRestaurarGrupo(mensaje, comidaNombre, tipoDia, grupo, idx
 
     const inp = document.createElement('input');
     inp.type = 'text';
+    inp.name = `nuevo-${grupoKey}`;
     inp.placeholder = `Nuevo alimento...`;
     inp.setAttribute('aria-label', `Nuevo ${labelGrupo}`);
 
