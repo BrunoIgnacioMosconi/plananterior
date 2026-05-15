@@ -32,6 +32,8 @@ function mostrarMensajeRestaurar(mensaje, grupoKey, valor, idx) {
       setOpciones(current);
       renderOpcionesForm();
       cargarComidas();
+      cargarSuplementosDia();
+      cargarEventualidades();
     }
     msgContainer.removeChild(msgElement);
   };
@@ -314,10 +316,10 @@ function importarHistorialCSV(file) {
     cargarEventualidades();
     cargarSuplementosDia();
 
-    // Refrescar el contador de jugo del día actual
+    // Refrescar el checkbox de jugo del día actual
     const todayKey = getTodayKey();
-    const jugoSpan = document.getElementById('jugo-count');
-    if (jugoSpan) jugoSpan.textContent = getJugoCount(todayKey);
+    const jugoCheck = document.getElementById('jugo-check');
+    if (jugoCheck) jugoCheck.checked = getJugoCount(todayKey) > 0;
 
     // Forzar la actualización de la configuración de dropdowns por comida
     // independientemente de la pestaña actual
@@ -610,12 +612,12 @@ function crearSelector(grupo, idx, tipo, selected = null) {
   return select;
 }
 
-// 🗓️ Cargar suplementos marcados para el día de hoy
+// 🗓️ Cargar suplementos marcados para el día activo
 function cargarSuplementosDia() {
   const div = document.getElementById('suplementos-dia');
   div.className = 'suplemento-container';
-  div.innerHTML = '<strong>💊 Suplementos de hoy:</strong>';
-  const key = new Date().toLocaleDateString('es-AR');
+  div.innerHTML = '<strong>💊 Suplementos del día:</strong>';
+  const key = getFechaActiva();
   const tomados = JSON.parse(localStorage.getItem('suplementosPorDia') || '{}')[key] || [];
 
   // Crear un contenedor con mejor diseño para los checkboxes
@@ -656,13 +658,36 @@ function cargarSuplementosDia() {
   div.appendChild(checkboxContainer);
 }
 
-// 🧾 Cargar la lista de comidas del día actual (basado en tipo de día)
+// 🧾 Cargar la lista de comidas del día activo (basado en tipo de día)
 function cargarComidas() {
   const ul = document.getElementById('comidas-lista');
   ul.innerHTML = '';
   const hist = JSON.parse(localStorage.getItem('historialComidas') || '[]');
-  const today = new Date().toLocaleDateString('es-AR');
-  const tipoDia = document.getElementById('tipo-dia-select')?.value || 'entrenamiento';
+  const fechaActiva = getFechaActiva();
+  const tipoSelect = document.getElementById('tipo-dia-select');
+  // Tipo del día: fijado por marcas previas, o inferido desde el historial existente
+  // (para días anteriores a la introducción de tipoDiaPorFecha). Si hay un tipo,
+  // sincronizamos el selector y lo bloqueamos; si no, el usuario elige libremente.
+  let tipoFijado = getTipoDiaFecha(fechaActiva);
+  if (!tipoFijado) {
+    // Marcadores inequívocos: el sufijo "_no_entrenamiento" solo aparece en grupos
+    // de días sin entrenamiento (Desayuno/Merienda); "postres:" solo aparece en
+    // Almuerzo/Cena de días con entrenamiento.
+    const entradasDelDia = hist.filter(x => x.fecha.split(',')[0].split(' ')[0].trim() === fechaActiva);
+    for (const e of entradasDelDia) {
+      if (e.seleccion.includes('_no_entrenamiento')) { tipoFijado = 'no_entrenamiento'; break; }
+      if (e.seleccion.includes('postres:')) { tipoFijado = 'entrenamiento'; break; }
+    }
+  }
+  if (tipoSelect) {
+    if (tipoFijado) {
+      tipoSelect.value = tipoFijado;
+      tipoSelect.disabled = true;
+    } else {
+      tipoSelect.disabled = false;
+    }
+  }
+  const tipoDia = tipoFijado || tipoSelect?.value || 'entrenamiento';
   const comidas = tipoDia === 'entrenamiento' ? comidasEntrenamiento : comidasNoEntrenamiento;
 
   comidas.forEach((c, i) => {
@@ -670,7 +695,7 @@ function cargarComidas() {
 
     const histEntry = hist.find(x => {
       const d = x.fecha.split(',')[0].split(' ')[0].trim();
-      return d === today && x.nombre === c.nombre;
+      return d === fechaActiva && x.nombre === c.nombre;
     });
     const done = !!histEntry;
 
@@ -770,18 +795,25 @@ function cargarComidas() {
 
 // ✅ Guardar selección de una comida en el historial
 function marcarComida(i, li) {
-  const fecha = new Date().toLocaleString('es-AR');
-  const tipoDia = document.getElementById('tipo-dia-select')?.value || 'entrenamiento';
+  const fechaActiva = getFechaActiva();
+  // Si es hoy, guardamos el timestamp real. Si es un día pasado, usamos 12:00 como
+  // hora fija (no tenemos un "ahora" de ese día y mediodía es predecible para ordenar).
+  const fecha = esFechaActivaHoy()
+    ? new Date().toLocaleString('es-AR')
+    : `${fechaActiva}, 12:00:00`;
+  // Tipo fijado por el día (si ya estaba) o el elegido en el selector.
+  const tipoDia = getTipoDiaFecha(fechaActiva)
+    || document.getElementById('tipo-dia-select')?.value
+    || 'entrenamiento';
   const comidasList = tipoDia === 'entrenamiento' ? comidasEntrenamiento : comidasNoEntrenamiento;
   const c = comidasList[i];
   const h = JSON.parse(localStorage.getItem('historialComidas') || '[]');
 
-  // Guard: si esta comida ya está marcada hoy, no agregar duplicado.
+  // Guard: si esta comida ya está marcada en el día activo, no agregar duplicado.
   // Cubre casos donde la UI quedó desfasada (cache viejo, doble click, etc.).
-  const today = new Date().toLocaleDateString('es-AR');
   const yaMarcada = h.some(x => {
     const d = x.fecha.split(',')[0].split(' ')[0].trim();
-    return d === today && x.nombre === c.nombre;
+    return d === fechaActiva && x.nombre === c.nombre;
   });
   if (yaMarcada) {
     cargarComidas();
@@ -793,6 +825,8 @@ function marcarComida(i, li) {
 
   h.push({ nombre: c.nombre, seleccion: sel, fecha });
   localStorage.setItem('historialComidas', JSON.stringify(h));
+  // Fija el tipo del día en la primera marca; calls posteriores son no-op.
+  setTipoDiaFecha(fechaActiva, tipoDia);
   cargarComidas();
   cargarHistorial();
 }
@@ -904,11 +938,11 @@ function cargarHistorial() {
     const badgesContainer = document.createElement('div');
     badgesContainer.className = 'historial-badges';
 
-    // Badge de jugo (si hay)
+    // Badge de jugo (si hubo)
     if (jc > 0) {
       const jugoBadge = document.createElement('span');
       jugoBadge.className = 'historial-badge historial-badge--jugo';
-      jugoBadge.textContent = `🧃 ${jc}`;
+      jugoBadge.textContent = '🧃';
       badgesContainer.appendChild(jugoBadge);
     }
 
@@ -1034,6 +1068,37 @@ function cargarHistorial() {
 }
 
 function getTodayKey() { return new Date().toLocaleDateString('es-AR'); }
+
+// — Fecha activa (día que se está viendo/editando en Principal) —
+// Conversiones entre es-AR (DD/MM/YYYY, sin padding) y el ISO de <input type="date"> (YYYY-MM-DD).
+function isoToEsAR(iso) {
+  if (!iso) return getTodayKey();
+  const [y, m, d] = iso.split('-');
+  return `${parseInt(d, 10)}/${parseInt(m, 10)}/${y}`;
+}
+function esARToISO(esAR) {
+  const [d, m, y] = esAR.split('/');
+  return `${y}-${m.padStart(2, '0')}-${d.padStart(2, '0')}`;
+}
+function getFechaActiva() {
+  const input = document.getElementById('fecha-activa');
+  return input?.value ? isoToEsAR(input.value) : getTodayKey();
+}
+function esFechaActivaHoy() {
+  return getFechaActiva() === getTodayKey();
+}
+
+// — Tipo de día persistido por fecha. Una vez que se marca cualquier comida en un día,
+// el tipo queda fijo para ese día y el selector se bloquea. —
+function getTipoDiaFecha(fecha) {
+  return JSON.parse(localStorage.getItem('tipoDiaPorFecha') || '{}')[fecha] || null;
+}
+function setTipoDiaFecha(fecha, tipo) {
+  const m = JSON.parse(localStorage.getItem('tipoDiaPorFecha') || '{}');
+  if (m[fecha]) return; // ya fijado, no pisar
+  m[fecha] = tipo;
+  localStorage.setItem('tipoDiaPorFecha', JSON.stringify(m));
+}
 
 // — Jugo Ades por día —
 function getJugoCount(key) { return JSON.parse(localStorage.getItem('jugoCounts') || '{}')[key] || 0; }
@@ -1493,7 +1558,9 @@ function mostrarMensajeRestaurarGrupo(mensaje, comidaNombre, tipoDia, grupo, idx
       colaciones: "🧁",
       grasas: "🥑",
       vegetales: "🥦",
-      suplementos: "💊"
+      postres: "🍰",
+      suplementos: "💊",
+      eventualidades: "🎉"
     };
     const icono = iconos[base] || '';
 
@@ -1527,6 +1594,8 @@ function mostrarMensajeRestaurarGrupo(mensaje, comidaNombre, tipoDia, grupo, idx
             setOpciones(current);
             renderOpcionesForm();
             cargarComidas();
+            cargarSuplementosDia();
+            cargarEventualidades();
             mostrarMensajeRestaurar(`Opción "${valorEliminado}" eliminada de ${labelGrupo}. Haz clic en la X para restaurar.`, grupoKey, valorEliminado, idx);
           };
 
@@ -1560,6 +1629,8 @@ function mostrarMensajeRestaurarGrupo(mensaje, comidaNombre, tipoDia, grupo, idx
         setOpciones(current);
         renderOpcionesForm();
         cargarComidas();
+        cargarSuplementosDia();
+        cargarEventualidades();
         inp.value = '';
       }
     };
@@ -1589,28 +1660,55 @@ window.addEventListener('DOMContentLoaded', () => {
   // Cargar configuraciones de comidas usando la función dedicada
   cargarConfiguracionComidas();
 
+  // Selector de fecha activa: por defecto hoy, futuros bloqueados.
+  const fechaInput = document.getElementById('fecha-activa');
+  const fechaAviso = document.getElementById('fecha-pasada-aviso');
+  const volverHoyBtn = document.getElementById('volver-hoy');
+  const fechaSelectorWrap = document.getElementById('fecha-selector');
+  const hoyISO = esARToISO(getTodayKey());
+  fechaInput.value = hoyISO;
+  fechaInput.max = hoyISO;
+
+  function refrescarPrincipal() {
+    const fecha = getFechaActiva();
+    const esHoy = esFechaActivaHoy();
+    fechaSelectorWrap.classList.toggle('fecha-selector--pasada', !esHoy);
+    volverHoyBtn.hidden = esHoy;
+    if (esHoy) {
+      fechaAviso.hidden = true;
+      fechaAviso.textContent = '';
+    } else {
+      fechaAviso.hidden = false;
+      fechaAviso.textContent = `Estás viendo el plan del ${fecha}.`;
+    }
+    cargarComidas();
+    cargarSuplementosDia();
+    jugoCheck.checked = getJugoCount(fecha) > 0;
+  }
+
   cargarComidas();
-  // Cambiar comidas al cambiar tipo de día
+  // Cambiar comidas al cambiar tipo de día (solo cuando el selector está habilitado:
+  // días sin entradas todavía).
   document.getElementById('tipo-dia-select').onchange = cargarComidas;
   cargarHistorial();
   cargarSuplementosDia();
   cargarEventualidades();
 
-  // Jugo Ades
-  const jugoSpan = document.getElementById('jugo-count');
-  jugoSpan.textContent = getJugoCount(getTodayKey());
-  document.getElementById('add-jugo').onclick = () => {
-    const k = getTodayKey();
-    const v = getJugoCount(k) + 1;
-    setJugoCount(k, v);
-    jugoSpan.textContent = v;
+  // Jugo Ades — único por día (sí/no). Opera sobre la fecha activa.
+  const jugoCheck = document.getElementById('jugo-check');
+  jugoCheck.checked = getJugoCount(getFechaActiva()) > 0;
+  jugoCheck.onchange = () => {
+    setJugoCount(getFechaActiva(), jugoCheck.checked ? 1 : 0);
     cargarHistorial();
   };
-  document.getElementById('reset-jugo').onclick = () => {
-    const k = getTodayKey();
-    setJugoCount(k, 0);
-    jugoSpan.textContent = 0;
-    cargarHistorial();
+
+  fechaInput.onchange = () => {
+    if (!fechaInput.value || fechaInput.value > hoyISO) fechaInput.value = hoyISO;
+    refrescarPrincipal();
+  };
+  volverHoyBtn.onclick = () => {
+    fechaInput.value = hoyISO;
+    refrescarPrincipal();
   };
 
   // Tabs

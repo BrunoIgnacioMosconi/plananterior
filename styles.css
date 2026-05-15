@@ -340,44 +340,68 @@ button.btn-outline:hover {
   color: var(--text-primary);
 }
 
-/* Contador de jugo Ades */
-.jugo-container {
+/* Selector de día activo */
+.fecha-selector {
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
-  background-color: var(--jugo-bg);
-  padding: 15px;
+  gap: 10px;
+  padding: 12px 15px;
+  background-color: var(--surface);
+  border: 1px solid var(--divider-color);
   border-radius: 8px;
   margin-bottom: 1rem;
   box-shadow: var(--box-shadow);
 }
 
-.jugo-container strong {
-  font-size: 1.2rem;
-  margin-right: 10px;
-  color: var(--jugo-fg);
+.fecha-selector label {
+  font-weight: bold;
+  color: var(--text-primary);
 }
 
-.jugo-contador {
+.fecha-selector input[type="date"] {
+  padding: 6px 10px;
+  border: 1px solid var(--divider-color);
+  border-radius: 6px;
+  font-size: 1rem;
+  background-color: var(--background-light);
+  color: var(--text-primary);
+}
+
+.fecha-selector--pasada {
+  border-color: var(--pending-color);
+  background-color: color-mix(in srgb, var(--pending-color) 12%, var(--surface));
+}
+
+.fecha-pasada-aviso {
+  flex-basis: 100%;
+  font-size: 0.9rem;
+  color: var(--text-secondary);
+}
+
+/* Jugo Ades — toggle yes/no del día */
+.jugo-container {
+  background-color: var(--jugo-bg);
+  padding: 12px 15px;
+  border-radius: 8px;
+  margin-bottom: 1rem;
+  box-shadow: var(--box-shadow);
+}
+
+.jugo-toggle {
   display: flex;
   align-items: center;
-  margin-left: auto;
-}
-
-.jugo-contador span {
-  font-size: 1.5rem;
-  margin: 0 10px;
+  gap: 10px;
+  cursor: pointer;
   color: var(--jugo-fg);
-  font-weight: bold;
+  font-size: 1.1rem;
 }
 
-.jugo-container .btn-outline {
-  color: var(--jugo-fg);
-  border-color: var(--jugo-fg);
-}
-
-.jugo-container .btn-outline:hover {
-  background-color: var(--jugo-fg);
-  color: white;
+.jugo-toggle input[type="checkbox"] {
+  width: 20px;
+  height: 20px;
+  accent-color: var(--jugo-fg);
+  cursor: pointer;
 }
 
 /* Eventualidades semanales */
@@ -479,17 +503,6 @@ button.btn-outline:hover {
   color: var(--text-secondary);
   font-style: italic;
   margin-top: 8px;
-}
-
-@media (max-width: 480px) {
-  .jugo-container {
-    flex-direction: column;
-    align-items: flex-start;
-  }
-  .jugo-contador {
-    margin-left: 0;
-    margin-top: 10px;
-  }
 }
 
 /* Suplementos */

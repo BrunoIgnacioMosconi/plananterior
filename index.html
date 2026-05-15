@@ -28,13 +28,18 @@
       <div id="opciones-form"></div>
     </section>
     <section id="tab-content-principal" class="tab-content" role="tabpanel" aria-labelledby="tab-principal">
+      <div id="fecha-selector" class="fecha-selector">
+        <label for="fecha-activa">📆 Día:</label>
+        <input type="date" id="fecha-activa">
+        <button type="button" id="volver-hoy" class="btn-secondary" hidden>← Hoy</button>
+        <span id="fecha-pasada-aviso" class="fecha-pasada-aviso" hidden></span>
+      </div>
+
       <div class="jugo-container">
-        <strong>🧃 Jugo Ades:</strong>
-        <div class="jugo-contador">
-          <button id="add-jugo" class="btn-outline">+1 Vaso</button>
-          <span id="jugo-count" aria-live="polite" aria-atomic="true">0</span>
-          <button id="reset-jugo" class="btn-secondary">Reiniciar</button>
-        </div>
+        <label class="jugo-toggle">
+          <input type="checkbox" id="jugo-check">
+          <span><strong>🧃 Jugo Ades</strong> del día</span>
+        </label>
       </div>
 
       <div id="suplementos-dia"></div>
