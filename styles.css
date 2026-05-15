@@ -10,8 +10,6 @@
   --divider-color: #BDBDBD;
   --background-light: #f5f5f5;
   --surface: #ffffff;
-  --water-bg: #E1F5FE;
-  --water-fg: #0288D1;
   --jugo-bg: #FFF3E0;
   --jugo-fg: #E65100;
   --sup-bg: #F3E5F5;
@@ -38,8 +36,6 @@
     --divider-color: #455A64;
     --background-light: #121212;
     --surface: #1E1E1E;
-    --water-bg: #0d2a3a;
-    --water-fg: #4FC3F7;
     --jugo-bg: #3a2a10;
     --jugo-fg: #FFB74D;
     --sup-bg: #2a1a35;
@@ -344,36 +340,6 @@ button.btn-outline:hover {
   color: var(--text-primary);
 }
 
-/* Contador de agua */
-.agua-container {
-  display: flex;
-  align-items: center;
-  background-color: var(--water-bg);
-  padding: 15px;
-  border-radius: 8px;
-  margin-bottom: 1rem;
-  box-shadow: var(--box-shadow);
-}
-
-.agua-container strong {
-  font-size: 1.2rem;
-  margin-right: 10px;
-  color: var(--water-fg);
-}
-
-.agua-contador {
-  display: flex;
-  align-items: center;
-  margin-left: auto;
-}
-
-.agua-contador span {
-  font-size: 1.5rem;
-  margin: 0 10px;
-  color: var(--water-fg);
-  font-weight: bold;
-}
-
 /* Contador de jugo Ades */
 .jugo-container {
   display: flex;
@@ -635,11 +601,6 @@ button.btn-outline:hover {
   padding: 3px 8px;
   border-radius: 12px;
   font-size: 0.85rem;
-}
-
-.historial-badge--agua {
-  background-color: var(--water-bg);
-  color: var(--water-fg);
 }
 
 .historial-badge--sup {
@@ -1073,15 +1034,9 @@ footer {
     padding: 0.75rem 0.9rem;
   }
 
-  .agua-container,
   .suplemento-container {
     flex-direction: column;
     align-items: flex-start;
-  }
-
-  .agua-contador {
-    margin-left: 0;
-    margin-top: 10px;
   }
 
   .mensaje-container {

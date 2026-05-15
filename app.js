@@ -53,7 +53,6 @@ function mostrarMensajeRestaurar(mensaje, grupoKey, valor, idx) {
 // — Exportar historial a CSV —
 function exportarHistorialCSV() {
    const historial = JSON.parse(localStorage.getItem('historialComidas') || '[]');
-  const waterCounts = JSON.parse(localStorage.getItem('waterCounts') || '{}');
   const jugoCounts = JSON.parse(localStorage.getItem('jugoCounts') || '{}');
   const suplementosPorDia = JSON.parse(localStorage.getItem('suplementosPorDia') || '{}');
   const eventualidades = JSON.parse(localStorage.getItem('eventualidadesSemanales') || '[]');
@@ -63,29 +62,27 @@ function exportarHistorialCSV() {
     if (!dias[fechaSolo]) dias[fechaSolo] = [];
     dias[fechaSolo].push(item);
   });
-  // Incluir días con solo agua, jugo o suplementos para que el round-trip no los pierda.
-  [waterCounts, jugoCounts, suplementosPorDia].forEach(obj => {
+  // Incluir días con solo jugo o suplementos para que el round-trip no los pierda.
+  [jugoCounts, suplementosPorDia].forEach(obj => {
     Object.keys(obj).forEach(fecha => {
       if (!dias[fecha]) dias[fecha] = [{ nombre: '', seleccion: '' }];
     });
   });
-  let csv = 'Fecha,Agua,Jugo,Suplementos,Comida,Selección\n';
+  let csv = 'Fecha,Jugo,Suplementos,Comida,Selección\n';
   Object.keys(dias).sort((a, b) => {
     const [da, ma, ya] = a.split('/');
     const [db, mb, yb] = b.split('/');
     return new Date(`${yb}-${mb}-${db}`) - new Date(`${ya}-${ma}-${da}`);
   }).forEach(fecha => {
-    const agua = waterCounts[fecha] || 0;
     const jugo = jugoCounts[fecha] || 0;
     const suplementos = (suplementosPorDia[fecha] || []).join(' | ');
     dias[fecha].forEach(item => {
       const fechaCSV = `"${fecha.replace(/"/g, '""')}"`;
-      const aguaCSV = `"${agua}"`;
       const jugoCSV = `"${jugo}"`;
       const suplementosCSV = `"${suplementos.replace(/"/g, '""')}"`;
       const nombre = `"${(item.nombre || '').replace(/"/g, '""')}"`;
       const seleccion = `"${(item.seleccion || '').replace(/"/g, '""')}"`;
-      csv += `${fechaCSV},${aguaCSV},${jugoCSV},${suplementosCSV},${nombre},${seleccion}\n`;
+      csv += `${fechaCSV},${jugoCSV},${suplementosCSV},${nombre},${seleccion}\n`;
     });
   });
 
@@ -186,7 +183,6 @@ function importarHistorialCSV(file) {
     // Procesar historial
     const headers = historialLines[0].split(',');
     const idxFecha = headers.findIndex(h => h.toLowerCase().includes('fecha'));
-    const idxAgua = headers.findIndex(h => h.toLowerCase().includes('agua'));
     const idxJugo = headers.findIndex(h => h.toLowerCase().includes('jugo'));
     const idxSup = headers.findIndex(h => h.toLowerCase().includes('suplementos'));
     const idxComida = headers.findIndex(h => h.toLowerCase().includes('comida'));
@@ -195,20 +191,17 @@ function importarHistorialCSV(file) {
       alert('CSV en formato inesperado.');
       return;
     }
-    const waterCounts = {};
     const jugoCounts = {};
     const suplementosPorDia = {};
     const historial = [];
     for (let i = 1; i < historialLines.length; i++) {
       const cols = historialLines[i].split(/,(?=(?:[^"]*"[^"]*")*[^"]*$)/);
       const fecha = (cols[idxFecha] || '').replace(/(^"|"$)/g, '').trim();
-      const agua = (cols[idxAgua] || '').replace(/(^"|"$)/g, '').trim();
       const jugo = idxJugo >= 0 ? (cols[idxJugo] || '').replace(/(^"|"$)/g, '').trim() : '';
       const sup = (cols[idxSup] || '').replace(/(^"|"$)/g, '').trim();
       const nombre = (cols[idxComida] || '').replace(/(^"|"$)/g, '').trim();
       const seleccion = (cols[idxSel] || '').replace(/(^"|"$)/g, '').trim();
       if (fecha) {
-        if (agua) waterCounts[fecha] = parseInt(agua, 10) || 0;
         if (jugo) jugoCounts[fecha] = parseInt(jugo, 10) || 0;
         if (sup) suplementosPorDia[fecha] = sup.split(' | ').map(s => s.trim());
       }
@@ -216,7 +209,6 @@ function importarHistorialCSV(file) {
         historial.push({ fecha, nombre, seleccion });
       }
     }
-    localStorage.setItem('waterCounts', JSON.stringify(waterCounts));
     localStorage.setItem('jugoCounts', JSON.stringify(jugoCounts));
     localStorage.setItem('suplementosPorDia', JSON.stringify(suplementosPorDia));
     localStorage.setItem('historialComidas', JSON.stringify(historial));
@@ -322,10 +314,8 @@ function importarHistorialCSV(file) {
     cargarEventualidades();
     cargarSuplementosDia();
 
-    // Refrescar los contadores de agua y jugo del día actual
+    // Refrescar el contador de jugo del día actual
     const todayKey = getTodayKey();
-    const waterSpan = document.getElementById('water-count');
-    if (waterSpan) waterSpan.textContent = getWaterCount(todayKey);
     const jugoSpan = document.getElementById('jugo-count');
     if (jugoSpan) jugoSpan.textContent = getJugoCount(todayKey);
 
@@ -437,7 +427,7 @@ const opciones = {
     "Papa (2u med.)",
     "Camote (2u med.)",
     "Legumbres (200gr)",
-    "Choclo (??)"
+    "Choclo (340-360g)",
   ],
   vegetales_almuerzo_no_entrenamiento: [
     "SI",
@@ -475,10 +465,10 @@ const opciones = {
     "Pescado (200g)"
   ],
   hidratos_cena_no_entrenamiento: [
-    "Papa (2u med.)",
-    "Camote (2u med.)",
+    "Papa (360-380g)",
+    "Camote (360-380g)",
     "Legumbres (200gr)",
-    "Choclo (??)"
+    "Choclo (340-360g)",
   ],
   vegetales_cena_no_entrenamiento: [
     "SI",
@@ -678,10 +668,21 @@ function cargarComidas() {
   comidas.forEach((c, i) => {
     const li = document.createElement('li');
 
-    const done = hist.some(x => {
+    const histEntry = hist.find(x => {
       const d = x.fecha.split(',')[0].split(' ')[0].trim();
       return d === today && x.nombre === c.nombre;
     });
+    const done = !!histEntry;
+
+    // Indexada por posición en c.grupos, no por nombre: una comida puede repetir
+    // el mismo grupo (ej. dos "proteinas") y un map por nombre colapsaría ambos.
+    const seleccionGuardada = [];
+    if (histEntry) {
+      histEntry.seleccion.split(', ').forEach(pair => {
+        const [, val] = pair.split(': ');
+        seleccionGuardada.push(val);
+      });
+    }
 
     if (done) li.classList.add('comida-completada', 'colapsada');
 
@@ -727,7 +728,7 @@ function cargarComidas() {
     };
 
     // Mostrar cada grupo de dropdowns
-    c.grupos.forEach(g => {
+    c.grupos.forEach((g, gIdx) => {
       const grupoDiv = document.createElement('div');
       grupoDiv.className = 'comida-grupo';
 
@@ -741,7 +742,7 @@ function cargarComidas() {
       labelText.textContent = `${icono} ${labelGrupo}`;
       label.appendChild(labelText);
 
-      const selector = crearSelector(g, i, c.tipo);
+      const selector = crearSelector(g, i, c.tipo, done ? seleccionGuardada[gIdx] : null);
       if (done) selector.disabled = true;
       label.appendChild(selector);
 
@@ -809,11 +810,8 @@ function editarHistorial(idx, container) {
     conf = comidasEntrenamiento.find(c => c.nombre === entry.nombre);
   }
   const grupos = conf.grupos, tipo = conf.tipo;
-  const currentMap = {};
-  entry.seleccion.split(', ').forEach(pair => {
-    const [g, val] = pair.split(': ');
-    currentMap[g] = val;
-  });
+  // Indexada por posición: ver nota en cargarComidas.
+  const currentValores = entry.seleccion.split(', ').map(pair => pair.split(': ')[1]);
   container.innerHTML = '';
   const form = document.createElement('div');
     const iconos = {
@@ -824,7 +822,7 @@ function editarHistorial(idx, container) {
   grasas: "🥑",
   vegetales: "🥦"
 };
-grupos.forEach(g => {
+grupos.forEach((g, gIdx) => {
   const lbl = document.createElement('label');
   lbl.className = 'editar-historial-label';
   const base = g.split('_')[0];
@@ -834,7 +832,7 @@ grupos.forEach(g => {
   labelSpan.className = 'editar-historial-label-text';
   labelSpan.textContent = `${icono} ${labelGrupo}`;
   lbl.appendChild(labelSpan);
-  lbl.appendChild(crearSelector(g, idx, tipo, currentMap[g]));
+  lbl.appendChild(crearSelector(g, idx, tipo, currentValores[gIdx]));
   form.appendChild(lbl);
 });
 
@@ -891,8 +889,7 @@ function cargarHistorial() {
     const li = document.createElement('li');
     li.className = 'historial-fecha';
 
-    // Obtener datos de agua, jugo y suplementos
-    const wc = JSON.parse(localStorage.getItem('waterCounts') || '{}')[fecha] || 0;
+    // Obtener datos de jugo y suplementos
     const jc = JSON.parse(localStorage.getItem('jugoCounts') || '{}')[fecha] || 0;
     const sup = (JSON.parse(localStorage.getItem('suplementosPorDia') || '{}')[fecha] || []);
 
@@ -906,12 +903,6 @@ function cargarHistorial() {
 
     const badgesContainer = document.createElement('div');
     badgesContainer.className = 'historial-badges';
-
-    // Badge de agua
-    const waterBadge = document.createElement('span');
-    waterBadge.className = 'historial-badge historial-badge--agua';
-    waterBadge.textContent = `💧 ${wc}`;
-    badgesContainer.appendChild(waterBadge);
 
     // Badge de jugo (si hay)
     if (jc > 0) {
@@ -1042,14 +1033,7 @@ function cargarHistorial() {
   });
 }
 
-// — Agua por día —
 function getTodayKey() { return new Date().toLocaleDateString('es-AR'); }
-function getWaterCount(key) { return JSON.parse(localStorage.getItem('waterCounts') || '{}')[key] || 0; }
-function setWaterCount(key, v) {
-  const m = JSON.parse(localStorage.getItem('waterCounts') || '{}');
-  m[key] = v;
-  localStorage.setItem('waterCounts', JSON.stringify(m));
-}
 
 // — Jugo Ades por día —
 function getJugoCount(key) { return JSON.parse(localStorage.getItem('jugoCounts') || '{}')[key] || 0; }
@@ -1611,23 +1595,6 @@ window.addEventListener('DOMContentLoaded', () => {
   cargarHistorial();
   cargarSuplementosDia();
   cargarEventualidades();
-
-  // Agua
-  const waterSpan = document.getElementById('water-count');
-  waterSpan.textContent = getWaterCount(getTodayKey());
-  document.getElementById('add-water').onclick = () => {
-    const k = getTodayKey();
-    const v = getWaterCount(k) + 1;
-    setWaterCount(k, v);
-    waterSpan.textContent = v;
-    cargarHistorial();
-  };
-  document.getElementById('reset-water').onclick = () => {
-    const k = getTodayKey();
-    setWaterCount(k, 0);
-    waterSpan.textContent = 0;
-    cargarHistorial();
-  };
 
   // Jugo Ades
   const jugoSpan = document.getElementById('jugo-count');

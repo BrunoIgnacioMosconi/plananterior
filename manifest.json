@@ -5,7 +5,7 @@
   "display": "standalone",
   "background_color": "#f0f4f8",
   "theme_color": "#4caf50",
-  "description": "Seguimiento personal de comidas, agua y suplementos",
+  "description": "Seguimiento personal de comidas, jugo y suplementos",
   "icons": [
     {
       "src": "icons/icon-192.png",

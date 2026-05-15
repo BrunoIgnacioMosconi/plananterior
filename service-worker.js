@@ -1,4 +1,4 @@
-const CACHE_NAME = 'nutricion-v1';
+const CACHE_NAME = 'nutricion-v2';
 const urlsToCache = [
   './',
   './index.html',
