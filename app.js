@@ -358,7 +358,7 @@ const opciones = {
   proteinas_desayuno_merienda: [
     "Vaso de leche (200cc)",
     "Vaso de yogur (200cc)",
-    "Porción de queso (70gr)",
+    "Porción de queso (70g)",
     "Fetas de queso (3u)",
     "Fetas de jamon (3u)",
     "Queso untable (2 cdas)",
@@ -367,7 +367,7 @@ const opciones = {
   proteinas_desayuno_merienda_no_entrenamiento: [
     "Vaso de leche (200cc)",
     "Vaso de yogur (200cc)",
-    "Porción de queso (70gr)",
+    "Porción de queso (70g)",
     "Fetas de queso (3u)",
     "Queso untable (2 cdas)",
     "Huevo entero (3u)"
@@ -376,8 +376,8 @@ const opciones = {
     "Pan lactal integral (3u)",
     "Pan de mesa (6u)",
     "Tostada de arroz (3u)",
-    "Granola (140gr)",
-    "Avena (140gr)",
+    "Granola (140g)",
+    "Avena (140g)",
     "Bay Biscuit (2u)"
   ],
   frutas: [
@@ -396,8 +396,8 @@ const opciones = {
   // Opciones separadas para almuerzo y cena
   proteinas_almuerzo_entrenamiento: [
     "Huevo entero (3u)",
-    "Queso PortSalut (80gr)",
-    "Ricota (80gr)",
+    "Queso PortSalut (80g)",
+    "Ricota (80g)",
     "Carne (280g)",
     "Pollo (280g)",
   ],
@@ -419,16 +419,15 @@ const opciones = {
     "Sin postre"
   ],
   proteinas_almuerzo_no_entrenamiento: [
-    "Huevo entero (3u)",
-    "Queso PortSalut (80gr)",
-    "Ricota (80gr)",
+    "Queso PortSalut (80g)",
+    "Ricota (80g)",
     "Carne (200g)",
     "Pollo (200g)",
   ],
   hidratos_almuerzo_no_entrenamiento: [
-    "Papa (2u med.)",
-    "Camote (2u med.)",
-    "Legumbres (200gr)",
+    "Papa (200g)",
+    "Camote (200g)",
+    "Legumbres (200g)",
     "Choclo (340-360g)",
   ],
   vegetales_almuerzo_no_entrenamiento: [
@@ -436,9 +435,6 @@ const opciones = {
     "NO"
   ],
   proteinas_cena: [
-    "Huevo entero (3u)",
-    "Ricota (80gr)",
-    "Queso PortSalut (80gr)",
     "Carne (220g)",
     "Pollo (220g)",
     "Pescado (220g)"
@@ -459,9 +455,6 @@ const opciones = {
   ],
   // Cena en días sin entrenamiento: cantidades originales, sin postre.
   proteinas_cena_no_entrenamiento: [
-    "Huevo entero (3u)",
-    "Ricota (80gr)",
-    "Queso PortSalut (80gr)",
     "Carne (200g)",
     "Pollo (200g)",
     "Pescado (200g)"
@@ -469,7 +462,7 @@ const opciones = {
   hidratos_cena_no_entrenamiento: [
     "Papa (360-380g)",
     "Camote (360-380g)",
-    "Legumbres (200gr)",
+    "Legumbres (200g)",
     "Choclo (340-360g)",
   ],
   vegetales_cena_no_entrenamiento: [
@@ -491,14 +484,6 @@ const opciones = {
     "Otro"
   ]
 };
-
-// 💊 Lista de suplementos disponibles para elegir por día
-// const suplementos = [
-//   "Creatina",
-//   "Proteína",
-//   "Muttant Mass (Scoop 1)",
-//   "Muttant Mass (Scoop 2)"
-// ];
 
 // 🥗 Configuración de comidas para días de ENTRENAMIENTO
 // Cada entrada representa una comida (ej: Desayuno) con los grupos de dropdowns que se van a mostrar
@@ -1256,6 +1241,232 @@ function cargarEventualidades() {
 }
 
 
+// — Resumen por rango de fechas (faltantes de comidas, Ades, suplementos, eventualidades) —
+const NOMBRES_COMIDA = ['Desayuno', 'Almuerzo', 'Merienda', 'Cena'];
+
+function fechasEnRango(desdeISO, hastaISO) {
+  const out = [];
+  if (!desdeISO || !hastaISO) return out;
+  const desde = new Date(desdeISO + 'T00:00:00');
+  const hasta = new Date(hastaISO + 'T00:00:00');
+  if (isNaN(desde) || isNaN(hasta) || desde > hasta) return out;
+  for (let d = new Date(desde); d <= hasta; d.setDate(d.getDate() + 1)) {
+    out.push(d.toLocaleDateString('es-AR'));
+  }
+  return out;
+}
+
+function calcularResumen(desdeISO, hastaISO) {
+  const fechas = fechasEnRango(desdeISO, hastaISO);
+  if (!fechas.length) return null;
+
+  const historial = JSON.parse(localStorage.getItem('historialComidas') || '[]');
+  const jugoCounts = JSON.parse(localStorage.getItem('jugoCounts') || '{}');
+  const supPorDia = JSON.parse(localStorage.getItem('suplementosPorDia') || '{}');
+  const eventualidades = JSON.parse(localStorage.getItem('eventualidadesSemanales') || '[]');
+  const suplementosLista = (getOpciones().suplementos || []).slice();
+
+  const fechasSet = new Set(fechas);
+
+  // Comidas hechas: por fecha, set de nombres
+  const hechasPorFecha = {};
+  historial.forEach(item => {
+    const f = (item.fecha || '').split(',')[0].split(' ')[0].trim();
+    if (!fechasSet.has(f)) return;
+    if (!hechasPorFecha[f]) hechasPorFecha[f] = new Set();
+    hechasPorFecha[f].add(item.nombre);
+  });
+
+  const faltantesPorComida = {};
+  NOMBRES_COMIDA.forEach(n => { faltantesPorComida[n] = 0; });
+  fechas.forEach(f => {
+    const hechas = hechasPorFecha[f] || new Set();
+    NOMBRES_COMIDA.forEach(n => { if (!hechas.has(n)) faltantesPorComida[n]++; });
+  });
+  const totalComidasFaltantes = Object.values(faltantesPorComida).reduce((a, b) => a + b, 0);
+
+  // Ades
+  const adesHechos = fechas.filter(f => (jugoCounts[f] || 0) > 0).length;
+  const adesFaltantes = fechas.length - adesHechos;
+
+  // Suplementos por tipo
+  const faltantesPorSup = {};
+  suplementosLista.forEach(s => { faltantesPorSup[s] = 0; });
+  fechas.forEach(f => {
+    const tomados = new Set(supPorDia[f] || []);
+    suplementosLista.forEach(s => { if (!tomados.has(s)) faltantesPorSup[s]++; });
+  });
+  const totalSupFaltantes = Object.values(faltantesPorSup).reduce((a, b) => a + b, 0);
+
+  // Eventualidades: contar semanas Mon-Sun distintas que el rango toca
+  const semanasSet = new Set();
+  fechas.forEach(f => {
+    const lunes = getInicioSemana(parseFechaArg(f));
+    semanasSet.add(lunes.toISOString().slice(0, 10));
+  });
+  const semanas = semanasSet.size;
+  const LIMITE_EVENT_SEMANA = 3;
+  const eventualidadesEsperadas = semanas * LIMITE_EVENT_SEMANA;
+  const eventualidadesHechas = eventualidades.filter(e => fechasSet.has(e.fecha)).length;
+  const eventualidadesFaltantes = Math.max(0, eventualidadesEsperadas - eventualidadesHechas);
+
+  // Detalle por tipo de eventualidad
+  const eventualidadesPorTipo = {};
+  eventualidades.forEach(e => {
+    if (!fechasSet.has(e.fecha)) return;
+    eventualidadesPorTipo[e.tipo] = (eventualidadesPorTipo[e.tipo] || 0) + 1;
+  });
+
+  return {
+    fechas,
+    diasTotal: fechas.length,
+    faltantesPorComida,
+    totalComidasFaltantes,
+    adesHechos,
+    adesFaltantes,
+    faltantesPorSup,
+    totalSupFaltantes,
+    semanas,
+    eventualidadesEsperadas,
+    eventualidadesHechas,
+    eventualidadesFaltantes,
+    eventualidadesPorTipo,
+  };
+}
+
+function renderResumen() {
+  const desdeEl = document.getElementById('resumen-desde');
+  const hastaEl = document.getElementById('resumen-hasta');
+  const cont = document.getElementById('resumen-resultado');
+  if (!desdeEl || !hastaEl || !cont) return;
+
+  cont.innerHTML = '';
+  const r = calcularResumen(desdeEl.value, hastaEl.value);
+  if (!r) {
+    const p = document.createElement('p');
+    p.className = 'resumen-empty';
+    p.textContent = 'Elegí un rango válido (Desde ≤ Hasta).';
+    cont.appendChild(p);
+    return;
+  }
+
+  const desdeAR = isoToEsAR(desdeEl.value);
+  const hastaAR = isoToEsAR(hastaEl.value);
+
+  const header = document.createElement('div');
+  header.className = 'resumen-periodo';
+  header.innerHTML = `📅 <strong>${desdeAR}</strong> → <strong>${hastaAR}</strong> &nbsp;·&nbsp; ${r.diasTotal} día${r.diasTotal === 1 ? '' : 's'}`;
+  cont.appendChild(header);
+
+  // Comidas
+  const cardComidas = document.createElement('div');
+  cardComidas.className = 'resumen-card resumen-card--comidas';
+  cardComidas.innerHTML = `<h3>🍽️ Comidas faltantes <span class="resumen-total">${r.totalComidasFaltantes}</span></h3>`;
+  const ulC = document.createElement('ul');
+  ulC.className = 'resumen-lista';
+  const iconosComida = { Desayuno: '🌅', Almuerzo: '🍝', Merienda: '🍵', Cena: '🌙' };
+  NOMBRES_COMIDA.forEach(n => {
+    const li = document.createElement('li');
+    li.innerHTML = `<span>${iconosComida[n] || ''} ${n}</span><span class="resumen-valor">${r.faltantesPorComida[n]}</span>`;
+    ulC.appendChild(li);
+  });
+  cardComidas.appendChild(ulC);
+  cont.appendChild(cardComidas);
+
+  // Ades
+  const cardAdes = document.createElement('div');
+  cardAdes.className = 'resumen-card resumen-card--ades';
+  cardAdes.innerHTML = `
+    <h3>🧃 Jugo Ades <span class="resumen-total">${r.adesFaltantes}</span></h3>
+    <p class="resumen-sub">Tomados: <strong>${r.adesHechos}</strong> de ${r.diasTotal} días · Faltantes: <strong>${r.adesFaltantes}</strong></p>
+  `;
+  cont.appendChild(cardAdes);
+
+  // Suplementos
+  const cardSup = document.createElement('div');
+  cardSup.className = 'resumen-card resumen-card--sup';
+  cardSup.innerHTML = `<h3>💊 Suplementos faltantes <span class="resumen-total">${r.totalSupFaltantes}</span></h3>`;
+  const sups = Object.keys(r.faltantesPorSup);
+  if (!sups.length) {
+    const p = document.createElement('p');
+    p.className = 'resumen-empty';
+    p.textContent = 'No hay suplementos configurados.';
+    cardSup.appendChild(p);
+  } else {
+    const ulS = document.createElement('ul');
+    ulS.className = 'resumen-lista';
+    sups.forEach(s => {
+      const li = document.createElement('li');
+      li.innerHTML = `<span>${s}</span><span class="resumen-valor">${r.faltantesPorSup[s]}</span>`;
+      ulS.appendChild(li);
+    });
+    cardSup.appendChild(ulS);
+  }
+  cont.appendChild(cardSup);
+
+  // Eventualidades
+  const cardEv = document.createElement('div');
+  cardEv.className = 'resumen-card resumen-card--evento';
+  cardEv.innerHTML = `
+    <h3>🎉 Eventualidades <span class="resumen-total">${r.eventualidadesFaltantes}</span></h3>
+    <p class="resumen-sub">${r.semanas} semana${r.semanas === 1 ? '' : 's'} × 3 = <strong>${r.eventualidadesEsperadas}</strong> esperadas · Hechas: <strong>${r.eventualidadesHechas}</strong> · Faltantes: <strong>${r.eventualidadesFaltantes}</strong></p>
+  `;
+  const tipos = Object.keys(r.eventualidadesPorTipo);
+  if (tipos.length) {
+    const ulE = document.createElement('ul');
+    ulE.className = 'resumen-lista';
+    tipos.sort((a, b) => r.eventualidadesPorTipo[b] - r.eventualidadesPorTipo[a]).forEach(t => {
+      const li = document.createElement('li');
+      li.innerHTML = `<span>${t}</span><span class="resumen-valor">${r.eventualidadesPorTipo[t]}</span>`;
+      ulE.appendChild(li);
+    });
+    cardEv.appendChild(ulE);
+  }
+  cont.appendChild(cardEv);
+}
+
+function inicializarResumen() {
+  const desdeEl = document.getElementById('resumen-desde');
+  const hastaEl = document.getElementById('resumen-hasta');
+  const btnCalc = document.getElementById('resumen-calcular');
+  if (!desdeEl || !hastaEl || !btnCalc) return;
+
+  // Default: últimos 30 días
+  const hoy = new Date();
+  const hace30 = new Date();
+  hace30.setDate(hoy.getDate() - 29); // 30 días inclusivo
+  const toISO = d => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+  if (!desdeEl.value) desdeEl.value = toISO(hace30);
+  if (!hastaEl.value) hastaEl.value = toISO(hoy);
+  hastaEl.max = toISO(hoy);
+  desdeEl.max = toISO(hoy);
+
+  btnCalc.onclick = renderResumen;
+
+  document.querySelectorAll('#tab-content-resumen [data-preset]').forEach(btn => {
+    btn.onclick = () => {
+      const preset = btn.dataset.preset;
+      const fin = new Date();
+      let ini = new Date();
+      if (preset === '7') {
+        ini.setDate(fin.getDate() - 6);
+      } else if (preset === '30') {
+        ini.setDate(fin.getDate() - 29);
+      } else if (preset === 'semana') {
+        ini = getInicioSemana(fin);
+      } else if (preset === 'mes') {
+        ini = new Date(fin.getFullYear(), fin.getMonth(), 1);
+      }
+      desdeEl.value = toISO(ini);
+      hastaEl.value = toISO(fin);
+      renderResumen();
+    };
+  });
+
+  renderResumen();
+}
+
+
 // Función para modificar los grupos de comidas (añadir/quitar dropdowns)
 function modificarGruposComida(comidaNombre, tipoComida, grupo, accion) {
   const lista = tipoComida === 'entrenamiento' ? comidasEntrenamiento : comidasNoEntrenamiento;
@@ -1727,11 +1938,13 @@ window.addEventListener('DOMContentLoaded', () => {
   }
   document.getElementById('tab-principal').onclick = () => showTab('principal');
   document.getElementById('tab-historial').onclick = () => showTab('historial');
+  document.getElementById('tab-resumen').onclick = () => { showTab('resumen'); renderResumen(); };
   document.getElementById('tab-opciones').onclick = () => showTab('opciones');
   document.getElementById('tab-ayuda').onclick = () => showTab('ayuda');
 
   showTab('principal');
 
+  inicializarResumen();
   renderOpcionesForm();
 
   document.getElementById('reiniciar-app').onclick = () => {

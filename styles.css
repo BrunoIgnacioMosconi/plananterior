@@ -1070,3 +1070,141 @@ button.btn-completar,
 .comidas-lista button.btn-secondary {
   margin-right: 0;
 }
+
+/* Resumen por rango de fechas */
+.resumen-form {
+  background-color: var(--surface);
+  padding: 15px;
+  border-radius: 8px;
+  margin-bottom: 1rem;
+  box-shadow: var(--box-shadow);
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.resumen-form__fechas {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.resumen-form__fechas label {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  flex: 1 1 160px;
+  font-weight: bold;
+  color: var(--text-primary);
+}
+
+.resumen-form__fechas input[type="date"] {
+  padding: 8px 12px;
+  border-radius: 4px;
+  border: 1px solid var(--divider-color);
+  background-color: var(--surface);
+  color: var(--text-primary);
+  font-size: 16px;
+  min-height: var(--tap-target);
+}
+
+.resumen-form__presets {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.resumen-form__presets .btn-outline {
+  flex: 1 1 auto;
+  margin-right: 0;
+}
+
+#resumen-calcular {
+  align-self: stretch;
+}
+
+.resumen-periodo {
+  background-color: var(--background-light);
+  padding: 10px 14px;
+  border-radius: 6px;
+  margin-bottom: 1rem;
+  color: var(--text-primary);
+}
+
+.resumen-card {
+  background-color: var(--surface);
+  padding: 14px 16px;
+  border-radius: 8px;
+  margin-bottom: 1rem;
+  box-shadow: var(--box-shadow);
+  border-left: 4px solid var(--divider-color);
+}
+
+.resumen-card h3 {
+  margin: 0 0 10px 0;
+  font-size: 1.05rem;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 10px;
+  color: var(--text-primary);
+}
+
+.resumen-total {
+  background-color: var(--text-secondary);
+  color: var(--surface);
+  padding: 2px 10px;
+  border-radius: 12px;
+  font-size: 0.95rem;
+  font-weight: bold;
+  min-width: 32px;
+  text-align: center;
+}
+
+.resumen-card--comidas { border-left-color: var(--primary-color); }
+.resumen-card--comidas .resumen-total { background-color: var(--primary-color); }
+
+.resumen-card--ades { border-left-color: var(--jugo-fg); }
+.resumen-card--ades .resumen-total { background-color: var(--jugo-fg); }
+
+.resumen-card--sup { border-left-color: var(--sup-fg); }
+.resumen-card--sup .resumen-total { background-color: var(--sup-fg); }
+
+.resumen-card--evento { border-left-color: var(--evento-fg); }
+.resumen-card--evento .resumen-total { background-color: var(--evento-fg); }
+
+.resumen-lista {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.resumen-lista li {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 8px 10px;
+  background-color: var(--background-light);
+  border-radius: 4px;
+  color: var(--text-primary);
+}
+
+.resumen-valor {
+  font-weight: bold;
+  color: var(--text-primary);
+}
+
+.resumen-sub {
+  margin: 0 0 8px 0;
+  color: var(--text-secondary);
+  font-size: 0.9rem;
+}
+
+.resumen-empty {
+  color: var(--text-secondary);
+  font-style: italic;
+  margin: 0;
+}
