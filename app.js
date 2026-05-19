@@ -379,6 +379,7 @@ const opciones = {
     "Pan lactal integral (3u)",
     "Pan de mesa (6u)",
     "Tostada de arroz (3u)",
+    "Discos de arroz (6u)",
     "Granola (140g)",
     "Avena (140g)",
     "Bay Biscuit (2u)"
@@ -388,6 +389,7 @@ const opciones = {
     "Pan lactal integral (3u)",
     "Pan de mesa (6u)",
     "Tostada de arroz (3u)",
+    "Discos de arroz (6u)",
     "Granola (140g)",
     "Avena (140g)",
     "Bay Biscuit (2u)"
