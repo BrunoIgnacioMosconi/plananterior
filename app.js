@@ -356,23 +356,35 @@ let tabActual = 'principal';
 // 🧠 Aquí están todas las opciones para los dropdowns agrupadas por tipo
 const opciones = {
   proteinas_desayuno_merienda: [
+    "Leche +Proteínas (200cc)",
     "Vaso de leche (200cc)",
     "Vaso de yogur (200cc)",
     "Porción de queso (70g)",
     "Fetas de queso (3u)",
     "Fetas de jamon (3u)",
     "Queso untable (2 cdas)",
-    "Huevo entero (3u)"
+    "Huevo entero (1u)"
   ],
   proteinas_desayuno_merienda_no_entrenamiento: [
+    "Leche +Proteínas (200cc)",
     "Vaso de leche (200cc)",
     "Vaso de yogur (200cc)",
     "Porción de queso (70g)",
     "Fetas de queso (3u)",
     "Queso untable (2 cdas)",
-    "Huevo entero (3u)"
+    "Huevo entero (1u)"
   ],
   hidratos_desayuno_merienda: [
+    "Tostadas Bimbo (3u)",
+    "Pan lactal integral (3u)",
+    "Pan de mesa (6u)",
+    "Tostada de arroz (3u)",
+    "Granola (140g)",
+    "Avena (140g)",
+    "Bay Biscuit (2u)"
+  ],
+  hidratos_desayuno_merienda_no_entrenamiento: [
+    "Tostadas Bimbo (3u)",
     "Pan lactal integral (3u)",
     "Pan de mesa (6u)",
     "Tostada de arroz (3u)",
@@ -393,22 +405,28 @@ const opciones = {
     "Pasta de maní",
     "½ palta"
   ],
+  grasas_no_entrenamiento: [
+    "4 nueces",
+    "Pasta de maní",
+    "½ palta"
+  ],
   // Opciones separadas para almuerzo y cena
   proteinas_almuerzo_entrenamiento: [
+    "Pollo (150g)",
+    "Carne (150g)",
+    "Pescado (150g)",
     "Huevo entero (3u)",
     "Queso PortSalut (80g)",
     "Ricota (80g)",
-    "Carne (280g)",
-    "Pollo (280g)",
   ],
   hidratos_almuerzo_entrenamiento: [
-    "Arroz cocido (330-360g)",
-    "Pasta cocida (330-360g)",
-    "Legumbres (340-360g)",
-    "Choclo (340-360g)",
-    "Soja (340-360g)",
-    "Quinoa (330-360g)",
-    "Trigo (330-360g)"
+    "Arroz cocido (300g)",
+    "Pasta cocida (300g)",
+    "Legumbres (300g)",
+    "Choclo (300g)",
+    "Soja (300g)",
+    "Quinoa (300g)",
+    "Trigo (300g)"
   ],
   vegetales_almuerzo_entrenamiento: [
     "SI",
@@ -419,12 +437,15 @@ const opciones = {
     "Sin postre"
   ],
   proteinas_almuerzo_no_entrenamiento: [
+    "Pollo (150g)",
+    "Carne (150g)",
+    "Pescado (150g)",
     "Queso PortSalut (80g)",
     "Ricota (80g)",
-    "Carne (200g)",
-    "Pollo (200g)",
   ],
   hidratos_almuerzo_no_entrenamiento: [
+    "Arroz cocido (220g)",
+    "Pasta cocida (220g)",
     "Papa (200g)",
     "Camote (200g)",
     "Legumbres (200g)",
@@ -434,16 +455,23 @@ const opciones = {
     "SI",
     "NO"
   ],
+  // Cena en días de entrenamiento: mismas opciones que almuerzo (plan: cena = almuerzo).
   proteinas_cena: [
-    "Carne (220g)",
-    "Pollo (220g)",
-    "Pescado (220g)"
+    "Pollo (150g)",
+    "Carne (150g)",
+    "Pescado (150g)",
+    "Huevo entero (3u)",
+    "Queso PortSalut (80g)",
+    "Ricota (80g)",
   ],
   hidratos_cena: [
-    "Papa (360-380g)",
-    "Camote (360-380g)",
-    "Legumbres (340-360g)",
-    "Choclo (340-360g)"
+    "Arroz cocido (300g)",
+    "Pasta cocida (300g)",
+    "Legumbres (300g)",
+    "Choclo (300g)",
+    "Soja (300g)",
+    "Quinoa (300g)",
+    "Trigo (300g)"
   ],
   vegetales_cena: [
     "SI",
@@ -453,15 +481,19 @@ const opciones = {
     "Flan",
     "Sin postre"
   ],
-  // Cena en días sin entrenamiento: cantidades originales, sin postre.
+  // Cena en días sin entrenamiento: mismas opciones que almuerzo, sin postre.
   proteinas_cena_no_entrenamiento: [
-    "Carne (200g)",
-    "Pollo (200g)",
-    "Pescado (200g)"
+    "Pollo (150g)",
+    "Carne (150g)",
+    "Pescado (150g)",
+    "Queso PortSalut (80g)",
+    "Ricota (80g)",
   ],
   hidratos_cena_no_entrenamiento: [
-    "Papa (360-380g)",
-    "Camote (360-380g)",
+    "Arroz cocido (220g)",
+    "Pasta cocida (220g)",
+    "Papa (200g)",
+    "Camote (200g)",
     "Legumbres (200g)",
     "Choclo (340-360g)",
   ],
@@ -471,9 +503,7 @@ const opciones = {
   ],
   suplementos: [
     "Creatina",
-    "Proteína",
-    "Muttant Mass (Scoop 1)",
-    "Muttant Mass (Scoop 2)"
+    "Proteína"
   ],
   eventualidades: [
     "Hamburguesa",
@@ -502,7 +532,7 @@ const comidasEntrenamiento = [
   {
     nombre: "Merienda",
     tipo: "desayuno_merienda",
-    grupos: ["proteinas", "proteinas", "hidratos", "frutas"]
+    grupos: ["proteinas", "proteinas", "hidratos", "frutas", "grasas"]
   },
   {
     nombre: "Cena",
@@ -516,7 +546,13 @@ const comidasNoEntrenamiento = [
   {
     nombre: "Desayuno",
     tipo: "no_entrenamiento",
-    grupos: ["proteinas_desayuno_merienda_no_entrenamiento", "frutas_no_entrenamiento"]
+    grupos: [
+      "proteinas_desayuno_merienda_no_entrenamiento",
+      "proteinas_desayuno_merienda_no_entrenamiento",
+      "hidratos_desayuno_merienda_no_entrenamiento",
+      "frutas_no_entrenamiento",
+      "grasas_no_entrenamiento"
+    ]
   },
   {
     nombre: "Almuerzo",
@@ -526,7 +562,13 @@ const comidasNoEntrenamiento = [
   {
     nombre: "Merienda",
     tipo: "no_entrenamiento",
-    grupos: ["proteinas_desayuno_merienda_no_entrenamiento", "frutas_no_entrenamiento"]
+    grupos: [
+      "proteinas_desayuno_merienda_no_entrenamiento",
+      "proteinas_desayuno_merienda_no_entrenamiento",
+      "hidratos_desayuno_merienda_no_entrenamiento",
+      "frutas_no_entrenamiento",
+      "grasas_no_entrenamiento"
+    ]
   },
   {
     nombre: "Cena",
